@@ -57,7 +57,8 @@ namespace Exprazor
                 if (action != null)
                 {
                     b[key] = action;
-                } else
+                }
+                else
                 {
                     return a[key] != b[key];
                 }
@@ -83,8 +84,6 @@ namespace Exprazor
 
         record VDOM(object Key);
 
-        object? GetKey(IHTMLNode? vdom) => vdom?.Key;
-
         public interface IHTMLNode
         {
             long Id { get; }
@@ -94,7 +93,7 @@ namespace Exprazor
             public long Id => ((IntPtr)GCHandle.Alloc(this, GCHandleType.Weak)).ToInt64();
         }
 
-        public record struct HTMLNode(string Tag, Dictionary<string, object>? Attributes, IEnumerable<HTMLNode>? Children) : IHTMLNode
+        public record HTMLNode(string Tag, Dictionary<string, object>? Attributes, IEnumerable<HTMLNode>? Children, object? Key) : IHTMLNode, IEquatable<HTMLNode>
         {
             public long Id => ((IntPtr)GCHandle.Alloc(this, GCHandleType.Weak)).ToInt64();
         }
@@ -157,32 +156,37 @@ namespace Exprazor
             public string Type => nameof(RemoveChild);
         }
 
-        void PatchAttribute(long nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands) {
+        void PatchAttribute(long nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands)
+        {
             if (key == "key") { }
-            else if(key.StartsWith("on"))
+            else if (key.StartsWith("on"))
             {
-                if(newValue == null)
+                if (newValue == null)
                 {
                     commands.Add(new RemoveCallback(nodeId, key));
                 }
-                else if(newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
+                else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
                 {
                     commands.Add(new SetVoidCallback(nodeId, key, ((long)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
                 }
-            } else
+            }
+            else
             {
-                if(newValue == null)
+                if (newValue == null)
                 {
                     commands.Add(new RemoveAttribute(nodeId, key));
-                } else if(oldValue == null || !newValue.Equals(oldValue))
+                }
+                else if (oldValue == null || !newValue.Equals(oldValue))
                 {
-                    if(newValue is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal)
+                    if (newValue is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal)
                     {
                         commands.Add(new SetNumberAttribute(nodeId, key, (decimal)newValue));
-                    } else if(newValue is string str)
+                    }
+                    else if (newValue is string str)
                     {
                         commands.Add(new SetStringAttribute(nodeId, key, str));
-                    } else if(newValue is bool b)
+                    }
+                    else if (newValue is bool b)
                     {
                         commands.Add(new SetBooleanAttribute(nodeId, key, b));
                     }
@@ -198,7 +202,7 @@ namespace Exprazor
                 commands.Add(new CreateTextNode(textNode.Id, textNode.Text));
                 return textNode.Id;
             }
-            else if(vdom is HTMLNode htmlNode)
+            else if (vdom is HTMLNode htmlNode)
             {
                 commands.Add(new CreateElement(htmlNode.Id, htmlNode.Tag));
                 if (htmlNode.Attributes != null)
@@ -208,11 +212,11 @@ namespace Exprazor
                         PatchAttribute(htmlNode.Id, key, null, value, in commands);
                     }
                 }
-                if(htmlNode.Children != null)
+                if (htmlNode.Children != null)
                 {
-                    foreach(var child in htmlNode.Children)
+                    foreach (var child in htmlNode.Children)
                     {
-                       var createdId = CreateNode(child, in commands);
+                        var createdId = CreateNode(child, in commands);
                         commands.Add(new AppendChild(htmlNode.Id, createdId, child.Tag));
                     }
                 }
@@ -221,60 +225,100 @@ namespace Exprazor
             throw new Exception("Unreachable code reached.");
         }
 
-        void Patch(HTMLNode parent, long nodeId, IHTMLNode? oldVNode, IHTMLNode newVNode, object listener, in List<DOMCommand> commands)
+        void Patch(long parentId, long nodeId, IHTMLNode? oldVNode, IHTMLNode newVNode, in List<DOMCommand> commands)
         {
-            if(oldVNode == newVNode)
+            if (oldVNode == newVNode)
             {
-            } else if(oldVNode is TextNode oldTextNode && newVNode is TextNode newTextNode)
+            }
+            else if (oldVNode is TextNode oldTextNode && newVNode is TextNode newTextNode)
             {
-                if(oldTextNode.Text != newTextNode.Text)
+                if (oldTextNode.Text != newTextNode.Text)
                 {
                     commands.Add(new SetTextNodeValue(newTextNode.Id, newTextNode.Text));
                 }
-            } else if(oldVNode == null || oldVNode is HTMLNode _oldHtmlNode && newVNode is HTMLNode _newHtmlNode && _oldHtmlNode.Tag != _newHtmlNode.Tag)
+            }
+            else if (oldVNode == null || oldVNode is HTMLNode _oldHtmlNode && newVNode is HTMLNode _newHtmlNode && _oldHtmlNode.Tag != _newHtmlNode.Tag)
             {
                 var newId = CreateNode(newVNode, in commands);
-                commands.Add(new InsertBefore(parent.Id, newId, nodeId));
-                if(oldVNode != null)
+                commands.Add(new InsertBefore(parentId, newId, nodeId));
+                if (oldVNode != null)
                 {
-                    commands.Add(new RemoveChild(parent.Id, oldVNode.Id));
+                    commands.Add(new RemoveChild(parentId, oldVNode.Id));
                 }
-            } else if(oldVNode is HTMLNode oldHtmlNode  && newVNode is HTMLNode newHtmlNode)
+            }
+            else if (oldVNode is HTMLNode oldHtmlNode && newVNode is HTMLNode newHtmlNode)
             {
                 IHTMLNode tmpVKid;
                 IHTMLNode oldVKid;
 
-                object oldKey;
-                object newKey;
+                object? oldKey;
+                object? newKey;
 
                 var oldAttributes = oldHtmlNode.Attributes;
                 var newAttributes = newHtmlNode.Attributes;
 
-                var oldVKids = oldHtmlNode.Children?.ToArray();
-                var newVKids = newHtmlNode.Children?.ToArray();
+                var oldVKids = oldHtmlNode.Children?.ToArray() ?? Array.Empty<IHTMLNode>();
+                var newVKids = newHtmlNode.Children?.ToArray() ?? Array.Empty<IHTMLNode>();
 
                 var oldHead = 0;
                 var newHead = 0;
-                var oldTail = oldVKids.Length - 1;
-                var newTail = newVKids.Length - 1;
+                var oldTail = oldVKids != null ? oldVKids.Length - 1 : 0;
+                var newTail = newVKids != null ? newVKids.Length - 1 : 0;
 
                 // Compare Attributes, if any diff, patch and make commands.
-                foreach(var key in (oldAttributes?.Keys ?? Enumerable.Empty<string>())
+                foreach (var key in (oldAttributes?.Keys ?? Enumerable.Empty<string>())
                 .Union(newAttributes?.Keys ?? Enumerable.Empty<string>()))
                 {
                     object? oldValue = null;
                     object? newValue = null;
                     oldAttributes?.TryGetValue(key, out oldValue);
                     newAttributes?.TryGetValue(key, out newValue);
-                    if(oldValue != newValue)
+                    if (oldValue != newValue)
                     {
                         PatchAttribute(nodeId, key, oldValue, newValue, commands);
                     }
                 }
 
-                while(newHead <= newTail && oldHead <= oldTail)
+                static object GetKey(HTMLNode node)
                 {
-                    if((oldKey = getKey(oldVKids[oldHead]))) == null || oldKey !== GetKey
+                    return node.Key ?? node;
+                }
+
+                while (newHead <= newTail && oldHead <= oldTail)
+                {
+                    oldKey = oldVKids[oldHead].Key;
+                    newKey = newVKids[newHead].Key;
+                    if (oldKey == null || !oldKey.Equals(newKey))
+                    {
+                        break;
+                    }
+
+                    Patch(nodeId, oldVKids[oldHead].Id, oldVKids[oldHead], newVKids[newHead], in commands);
+                    oldHead++;
+                    newHead++;
+                }
+
+                while (newHead <= newTail && oldHead <= oldTail)
+                {
+                    oldKey = GetKey(oldVKids[oldTail]);
+                    newKey = GetKey(newVKids[newTail]);
+                    if(oldKey == null || !oldKey.Equals(newKey))
+                    {
+                        break;
+                    }
+
+                    Patch(nodeId, oldVKids[oldHead].Id, oldVKids[oldHead], newVKids[newHead], in commands);
+                    oldHead++;
+                    newHead++;
+                }
+
+                if(oldHead > oldTail)
+                {
+                    while(newHead <= newTail)
+                    {
+                        var createdId = CreateNode(newVKids[newHead++], )
+                        commands.Add(new InsertBefore())
+                    }
                 }
             }
         }
