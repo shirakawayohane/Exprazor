@@ -1,327 +1,174 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Exprazor
+namespace Exprazor;
+using Attributes = Dictionary<string, object>;
+using Id = System.Int64;
+
+internal static class ExprazorCore
 {
-    internal class ExprazorCore
+    /// <returns>Id of created node</returns>
+    internal static Id CreateNode(ExprazorApp context, Id parentId, IExprazorNode vdom, in List<DOMCommand> commands)
     {
-        public enum NodeType
+        if (vdom is Component) throw new ArgumentException($"Passing Component to {CreateNode} directry is invalid.", nameof(vdom));
+        var newId = context.NextId();
+        vdom.NodeId = newId;
+        if (vdom is TextNode textNode)
         {
-            SSR_NODE = 1,
-            TEXT_NODE = 3
+            commands.Add(new CreateTextNode(newId, textNode.Text));
         }
-
-        public string SVG_NS = "http://www.w3.org/2000/svg";
-
-        public string CreateClass(string str) => str;
-        public string CreateClass(string[] strArray) => string.Join(" ", strArray.Where(x => string.IsNullOrEmpty(x)));
-        public string CreateClass(Dictionary<string, object> dic)
+        else if (vdom is HTMLNode htmlNode)
         {
-            var ret = string.Empty;
-            foreach (var (k, v) in dic)
+            commands.Add(new CreateElement(newId, htmlNode.Tag));
+            if (htmlNode.Attributes != null)
             {
-                if (v is bool b && b)
+                foreach (var (key, value) in htmlNode.Attributes)
                 {
-                    ret += k + " ";
-                }
-                if (v is string s)
-                {
-                    ret += k + " ";
+                    PatchAttribute(newId, key, null, value, in commands);
                 }
             }
-
-            return ret.TrimEnd();
-        }
-
-        bool ShouldRestart(Dictionary<string, object> a, Dictionary<string, object> b)
-        {
-            var keys = a.Keys.Union(b.Keys);
-            foreach (var key in keys)
+            if (htmlNode.Children != null)
             {
-                if (!a.ContainsKey(key)) return false;
-                object? action = null;
-                if (a[key] is Action act)
+                foreach (var child in htmlNode.Children)
                 {
-                    action = act;
+                    var createdId = CreateNode(context, newId, child, in commands);
+                    commands.Add(new AppendChild(newId, createdId));
                 }
-                else if (a[key] is Array arr && arr.Length > 0 && arr.GetValue(0) is Action _act)
-                {
-                    action = _act;
-                }
-                if (action != null)
-                {
-                    b[key] = action;
-                }
-                else
-                {
-                    return a[key] != b[key];
-                }
-            }
-            return false;
-        }
-
-        delegate void Dispatcher();
-
-        // 一旦飛ばす
-        void PatchSubscriptions(object[] oldSubs, object[]? newSubs, Dispatcher dispatch)
-        {
-            int largerLength = Math.Max(oldSubs.Length, newSubs?.Length ?? 0);
-            var subs = new object[largerLength];
-            for (int i = 0; i < largerLength; i++)
-            {
-                var oldSub = oldSubs[i];
-                var newSub = newSubs[i];
-
-                //   subs[i] = newSub != null ? oldSub != null || newSub[0] != oldSub[0]
             }
         }
 
-        record VDOM(object Key);
-
-        public interface IHTMLNode
+        return vdom.NodeId;
+    }
+    static void PatchAttribute(Id nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands)
+    {
+        if (key == "key") { }
+        else if (key.StartsWith("on"))
         {
-            long Id { get; }
-        }
-        public record struct TextNode(string Text) : IHTMLNode
-        {
-            public long Id => ((IntPtr)GCHandle.Alloc(this, GCHandleType.Weak)).ToInt64();
-        }
-
-        public record HTMLNode(string Tag, Dictionary<string, object>? Attributes, IEnumerable<HTMLNode>? Children, object? Key) : IHTMLNode, IEquatable<HTMLNode>
-        {
-            public long Id => ((IntPtr)GCHandle.Alloc(this, GCHandleType.Weak)).ToInt64();
-        }
-
-        internal interface DOMCommand
-        {
-            /// <summary>
-            /// Treat Type as string at least until this starts working.
-            /// </summary>
-            string Type { get; }
-        }
-
-        internal record struct SetStringAttribute(long Id, string Key, string Value) : DOMCommand
-        {
-            public string Type => nameof(SetStringAttribute);
-        }
-        internal record struct SetNumberAttribute(long Id, string Key, decimal Value) : DOMCommand
-        {
-            public string Type => nameof(SetNumberAttribute);
-        }
-        internal record struct SetBooleanAttribute(long Id, string Key, bool Value) : DOMCommand
-        {
-            public string Type => nameof(SetBooleanAttribute);
-        }
-        internal record struct RemoveAttribute(long Id, string Key) : DOMCommand
-        {
-            public string Type => nameof(RemoveAttribute);
-        }
-
-        internal record struct SetVoidCallback(long Id, string Key, long ActPtr) : DOMCommand
-        {
-            public string Type => nameof(SetVoidCallback);
-        }
-        internal record struct RemoveCallback(long Id, string Key) : DOMCommand
-        {
-            public string Type => nameof(RemoveCallback);
-        }
-        internal record struct CreateTextNode(long Id, string Text) : DOMCommand
-        {
-            public string Type => nameof(CreateTextNode);
-        }
-        internal record struct CreateElement(long Id, string Tag) : DOMCommand
-        {
-            public string Type => nameof(CreateElement);
-        }
-        internal record struct AppendChild(long ParentId, long NewId, string Tag) : DOMCommand
-        {
-            public string Type => nameof(AppendChild);
-        }
-        internal record struct SetTextNodeValue(long Id, string Text) : DOMCommand
-        {
-            public string Type => nameof(SetTextNodeValue);
-        }
-        internal record struct InsertBefore(long ParentId, long NewId, long BeforeId) : DOMCommand
-        {
-            public string Type => nameof(InsertBefore);
-        }
-        internal record struct RemoveChild(long ParentId, long ChildId) : DOMCommand
-        {
-            public string Type => nameof(RemoveChild);
-        }
-
-        void PatchAttribute(long nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands)
-        {
-            if (key == "key") { }
-            else if (key.StartsWith("on"))
+            if (newValue == null)
             {
-                if (newValue == null)
+                commands.Add(new RemoveCallback(nodeId, key));
+            }
+            else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
+            {
+                commands.Add(new SetVoidCallback(nodeId, key, ((Id)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
+            }
+        }
+        else
+        {
+            if (newValue == null)
+            {
+                commands.Add(new RemoveAttribute(nodeId, key));
+            }
+            else if (oldValue == null || !newValue.Equals(oldValue))
+            {
+                if (newValue is byte or sbyte or short or ushort or int or long or ulong or ulong or float or double or decimal)
                 {
-                    commands.Add(new RemoveCallback(nodeId, key));
+                    commands.Add(new SetNumberAttribute(nodeId, key, (decimal)newValue));
                 }
-                else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
+                else if (newValue is string str)
                 {
-                    commands.Add(new SetVoidCallback(nodeId, key, ((long)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
+                    commands.Add(new SetStringAttribute(nodeId, key, str));
                 }
+                else if (newValue is bool b)
+                {
+                    commands.Add(new SetBooleanAttribute(nodeId, key, b));
+                }
+            }
+        }
+    }
+
+    // まずは、ルート同士で、タグとアトリビュートを比較して差分を発行する。
+    // 次に、子ノードに対して、再帰的に同じ比較を行うが、
+    // keyが同じ場合は比較、
+    // oldNodeには存在するが、newNodeには存在しないものはまるごと削除
+    // oldNodeには存在するが、newNodeには存在するものはまるごと追加し、子供に対してもPatchする
+
+    // Patchが長すぎるので、LINQを使ってでも短く書き直す
+    static internal void Patch(ExprazorApp context, Id parentId, Id nodeId, IExprazorNode? oldVNode, IExprazorNode newVNode, in List<DOMCommand> commands)
+    {
+        if (oldVNode == newVNode) return;
+
+
+        if (oldVNode == null || oldVNode.GetType() != newVNode.GetType())
+        {
+            oldVNode = null;
+        }
+        if (oldVNode == null || oldVNode.GetType() != newVNode.GetType())
+        {
+            if (newVNode is Component newComponent)
+            {
+                var newState = newComponent.PropsChanged(newComponent.Props);
+                newComponent.State = newState;
+                newComponent.lastTree = newComponent.Render(newState);
+                var createdId = CreateNode(context, parentId, newVNode, commands);
+                commands.Add(new InsertBefore(parentId, createdId, nodeId));
+            } else
+            {
+                var createdId = CreateNode(context, parentId, newVNode, commands);
+                commands.Add(new InsertBefore(parentId, createdId, nodeId));
+            }
+
+            if(oldVNode != null)
+            {
+                commands.Add(new RemoveChild(parentId, nodeId));
+            }
+
+            return;
+        }
+
+        if (oldVNode is TextNode oldTextNode && newVNode is TextNode newTextNode)
+        {
+            if (oldTextNode.Text != newTextNode.Text)
+            {
+                commands.Add(new SetTextNodeValue(newTextNode.NodeId, newTextNode.Text));
+            }
+        }
+        else if (oldVNode is Component oldComponent && newVNode is Component newComponent)
+        {
+            if (!oldComponent.Props.Equals(newComponent.Props))
+            {
+                var newState = newComponent.PropsChanged(newComponent.Props);
+                var newTree = newComponent.Render(newState);
+                Patch(context, newComponent.ParentId, newComponent.NodeId, newComponent.lastTree, newTree, commands);
+                newComponent.lastTree = newTree;
             }
             else
             {
-                if (newValue == null)
-                {
-                    commands.Add(new RemoveAttribute(nodeId, key));
-                }
-                else if (oldValue == null || !newValue.Equals(oldValue))
-                {
-                    if (newValue is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal)
-                    {
-                        commands.Add(new SetNumberAttribute(nodeId, key, (decimal)newValue));
-                    }
-                    else if (newValue is string str)
-                    {
-                        commands.Add(new SetStringAttribute(nodeId, key, str));
-                    }
-                    else if (newValue is bool b)
-                    {
-                        commands.Add(new SetBooleanAttribute(nodeId, key, b));
-                    }
-                }
+                newComponent.State = oldComponent.State;
+                newComponent.lastTree = oldComponent.lastTree;
             }
         }
-
-        /// <returns>Id of created node</returns>
-        long CreateNode(IHTMLNode vdom, in List<DOMCommand> commands)
+        else if (oldVNode is HTMLNode oldHTMLNode && newVNode is HTMLNode newHTMLNode)
         {
-            if (vdom is TextNode textNode)
+            if (oldHTMLNode.Tag != newHTMLNode.Tag)
             {
-                commands.Add(new CreateTextNode(textNode.Id, textNode.Text));
-                return textNode.Id;
+                var createId = CreateNode(context, parentId, newVNode, commands);
+                commands.Add(new InsertBefore(parentId, createId, nodeId));
+                commands.Add(new RemoveChild(parentId, oldVNode.NodeId));
             }
-            else if (vdom is HTMLNode htmlNode)
+            else
             {
-                commands.Add(new CreateElement(htmlNode.Id, htmlNode.Tag));
-                if (htmlNode.Attributes != null)
-                {
-                    foreach (var (key, value) in htmlNode.Attributes)
-                    {
-                        PatchAttribute(htmlNode.Id, key, null, value, in commands);
-                    }
-                }
-                if (htmlNode.Children != null)
-                {
-                    foreach (var child in htmlNode.Children)
-                    {
-                        var createdId = CreateNode(child, in commands);
-                        commands.Add(new AppendChild(htmlNode.Id, createdId, child.Tag));
-                    }
-                }
-            }
-
-            throw new Exception("Unreachable code reached.");
-        }
-
-        void Patch(long parentId, long nodeId, IHTMLNode? oldVNode, IHTMLNode newVNode, in List<DOMCommand> commands)
-        {
-            if (oldVNode == newVNode)
-            {
-            }
-            else if (oldVNode is TextNode oldTextNode && newVNode is TextNode newTextNode)
-            {
-                if (oldTextNode.Text != newTextNode.Text)
-                {
-                    commands.Add(new SetTextNodeValue(newTextNode.Id, newTextNode.Text));
-                }
-            }
-            else if (oldVNode == null || oldVNode is HTMLNode _oldHtmlNode && newVNode is HTMLNode _newHtmlNode && _oldHtmlNode.Tag != _newHtmlNode.Tag)
-            {
-                var newId = CreateNode(newVNode, in commands);
-                commands.Add(new InsertBefore(parentId, newId, nodeId));
-                if (oldVNode != null)
-                {
-                    commands.Add(new RemoveChild(parentId, oldVNode.Id));
-                }
-            }
-            else if (oldVNode is HTMLNode oldHtmlNode && newVNode is HTMLNode newHtmlNode)
-            {
-                IHTMLNode tmpVKid;
-                IHTMLNode oldVKid;
-
-                object? oldKey;
-                object? newKey;
-
-                var oldAttributes = oldHtmlNode.Attributes;
-                var newAttributes = newHtmlNode.Attributes;
-
-                var oldVKids = oldHtmlNode.Children?.ToArray() ?? Array.Empty<IHTMLNode>();
-                var newVKids = newHtmlNode.Children?.ToArray() ?? Array.Empty<IHTMLNode>();
-
-                var oldHead = 0;
-                var newHead = 0;
-                var oldTail = oldVKids != null ? oldVKids.Length - 1 : 0;
-                var newTail = newVKids != null ? newVKids.Length - 1 : 0;
-
-                // Compare Attributes, if any diff, patch and make commands.
-                foreach (var key in (oldAttributes?.Keys ?? Enumerable.Empty<string>())
-                .Union(newAttributes?.Keys ?? Enumerable.Empty<string>()))
+                foreach (var key in (oldHTMLNode.Attributes?.Keys ?? Enumerable.Empty<string>())
+                .Union(newHTMLNode.Attributes?.Keys ?? Enumerable.Empty<string>()))
                 {
                     object? oldValue = null;
                     object? newValue = null;
-                    oldAttributes?.TryGetValue(key, out oldValue);
-                    newAttributes?.TryGetValue(key, out newValue);
+                    oldHTMLNode.Attributes?.TryGetValue(key, out oldValue);
+                    newHTMLNode.Attributes?.TryGetValue(key, out newValue);
                     if (oldValue != newValue)
                     {
                         PatchAttribute(nodeId, key, oldValue, newValue, commands);
                     }
                 }
-
-                static object GetKey(HTMLNode node)
-                {
-                    return node.Key ?? node;
-                }
-
-                while (newHead <= newTail && oldHead <= oldTail)
-                {
-                    oldKey = oldVKids[oldHead].Key;
-                    newKey = newVKids[newHead].Key;
-                    if (oldKey == null || !oldKey.Equals(newKey))
-                    {
-                        break;
-                    }
-
-                    Patch(nodeId, oldVKids[oldHead].Id, oldVKids[oldHead], newVKids[newHead], in commands);
-                    oldHead++;
-                    newHead++;
-                }
-
-                while (newHead <= newTail && oldHead <= oldTail)
-                {
-                    oldKey = GetKey(oldVKids[oldTail]);
-                    newKey = GetKey(newVKids[newTail]);
-                    if(oldKey == null || !oldKey.Equals(newKey))
-                    {
-                        break;
-                    }
-
-                    Patch(nodeId, oldVKids[oldHead].Id, oldVKids[oldHead], newVKids[newHead], in commands);
-                    oldHead++;
-                    newHead++;
-                }
-
-                if(oldHead > oldTail)
-                {
-                    while(newHead <= newTail)
-                    {
-                        var createdId = CreateNode(newVKids[newHead++], )
-                        commands.Add(new InsertBefore())
-                    }
-                }
             }
-        }
 
+            IExprazorNode[] oldChildren = oldHTMLNode.Children?.ToArray() ?? Array.Empty<IExprazorNode>();
+            IExprazorNode[] newChildren = oldHTMLNode.Children?.ToArray() ?? Array.Empty<IExprazorNode>();
+
+        }
     }
 }
