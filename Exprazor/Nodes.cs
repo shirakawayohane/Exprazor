@@ -51,7 +51,7 @@ namespace Exprazor
     public abstract class Component : IExprazorNode
     {
         // Elmで非nullを担保
-        internal ExprazorApp Context { get; init; } = default!;
+        internal ExprazorApp Context { get; set; } = default!;
         public Id ParentId { get; init; }
         public Id NodeId
         {

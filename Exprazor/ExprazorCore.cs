@@ -59,7 +59,7 @@ internal static class ExprazorCore
             }
             else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
             {
-                commands.Add(new SetVoidCallback(nodeId, key, ((Id)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
+                commands.Add(new SetVoidCallback(nodeId, key, ((long)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
             }
         }
         else
@@ -93,9 +93,9 @@ internal static class ExprazorCore
     // oldNodeには存在するが、newNodeには存在するものはまるごと追加し、子供に対してもPatchする
 
     // Patchが長すぎるので、LINQを使ってでも短く書き直す
-    static internal Id Patch(ExprazorApp context, Id parentId, Id nodeId, IExprazorNode? oldVNode, IExprazorNode newVNode, in List<DOMCommand> commands)
+    static internal void Patch(ExprazorApp context, Id parentId, Id nodeId, IExprazorNode? oldVNode, IExprazorNode newVNode, in List<DOMCommand> commands)
     {
-        if (oldVNode == newVNode) return oldVNode.NodeId;
+        if (oldVNode == newVNode) return;
 
         if (oldVNode == null || oldVNode.GetType() != newVNode.GetType())
         {
@@ -107,7 +107,7 @@ internal static class ExprazorCore
                 commands.Add(new RemoveChild(parentId, nodeId));
             }
 
-            return newVNode.NodeId;
+            return;
         }
 
         if (oldVNode is TextNode oldTextNode && newVNode is TextNode newTextNode)
@@ -156,64 +156,66 @@ internal static class ExprazorCore
                 }
             }
 
-            var oldChildren = oldHTMLNode.Children?.ToArray() ?? Array.Empty<IExprazorNode>();
-            var newChildren = newHTMLNode.Children?.ToArray() ?? Array.Empty<IExprazorNode>();
-            int oldHead = 0;
-            int oldTail = oldChildren.Length - 1;
-            int newHead = 0;
-            int newTail = newChildren.Length - 1;
-
+            LinkedList<IExprazorNode> oldChildren = new LinkedList<IExprazorNode>(oldHTMLNode.Children ?? Enumerable.Empty<IExprazorNode>());
+            LinkedList<IExprazorNode> newChildren = new LinkedList<IExprazorNode>(newHTMLNode.Children ?? Enumerable.Empty<IExprazorNode>());
             // STEP 0:
             // Patch same key nodes from both side.
             // A B C d ... x Y Z    =>  d ... x
             // A B C D ... X Y Z        D ... X
-            while(true)
+            while(oldChildren.Any() && newChildren.Any())
             {
-                var oldKey = oldChildren[oldHead].GetKey();
-                if (oldKey == null || oldKey != newChildren[newHead].GetKey()) break;
-                Patch(context, nodeId, oldChildren[oldHead].NodeId, oldChildren[oldHead], newChildren[newHead], commands);
-                oldHead++; newHead++;
+                var oldChild = oldChildren.First!.Value;
+                var newChild = newChildren.First!.Value;
+                var oldKey = oldChild.GetKey();
+                if (oldKey == null || oldKey != newChild.GetKey()) break;
+                Patch(context, nodeId, oldChild.NodeId, oldChild, newChild, commands);
+                oldChildren.RemoveFirst();
+                newChildren.RemoveFirst();
             }
-            while(true)
+            while (oldChildren.Any() && newChildren.Any())
             {
-                var oldKey = oldChildren[oldTail].GetKey();
-                if (oldKey == null || oldKey != newChildren[newTail].GetKey()) break;
-                Patch(context, nodeId, oldChildren[oldTail].NodeId, oldChildren[oldTail], newChildren[newTail], commands);
-                oldTail--; newTail--;
+                var oldChild = oldChildren.First!.Value;
+                var newChild = newChildren.First!.Value;
+                var oldKey = oldChild.GetKey();
+                if (oldKey == null || oldKey != newChild.GetKey()) break;
+                Patch(context, nodeId, oldChild.NodeId, oldChild, newChild, commands);
+                oldChildren.RemoveLast();
+                newChildren.RemoveLast();
             }
             // STEP 1:
-            // old: A B C D E       => A B X... C D E
-            // new: A B X...  C D E
+            // old: A B C D E       => A B X...C D E
+            // new: A B X...C D E 
             //          ↑ insert new node if vnode has inserted.
-            if(oldHead > oldTail)
+            if(!oldChildren.Any())
             {
-                while(newHead <= newTail)
+                while(newChildren.Any())
                 {
-                    var createdId = CreateNode(context, newChildren[newHead], commands);
+                    var createdId = CreateNode(context, newChildren.First!.Value, commands);
                     commands.Add(new InsertBefore(nodeId, createdId, oldVNode.NodeId));
+                    newChildren.RemoveFirst();
                 }
             // STEP 2:
             // old: A B C D E => A B E
-            // new: A B _ _←E
+            // new: A B     E
             //          ↑ remove node if vnode has removed
-            } else if(newHead > newTail)
+            } else if(!newChildren.Any())
             {
-                while(oldHead <= oldTail)
+                while(oldChildren.Any())
                 {
-                    commands.Add(new RemoveChild(nodeId, oldChildren[oldHead++].NodeId));
+                    commands.Add(new RemoveChild(nodeId, oldChildren.First!.Value.NodeId));
+                    oldChildren.RemoveFirst();
                 }
             } else
             {
                 var keyed = oldChildren.Where(x => x.GetKey() != null).ToDictionary(x => x.GetKey()!, x => x);
-                var nullPatched = new List<IExprazorNode>();
-                var newKeyed = new HashSet<object>();
-                while(newHead <= newTail)
+                // loop until all of the newChildren is patched.
+                while (newChildren.Any())
                 {
-                    var oldChild = oldChildren[oldHead];
-                    var newChild = newChildren[newHead];
+                    var oldChild = oldChildren.First();
+                    var newChild = newChildren.First();
                     var oldKey = oldChild.GetKey();
                     var newKey = newChild.GetKey();
-                    var nextKey = oldChildren[oldHead + 1].GetKey();
+                    var nextKey = oldChildren.First!.Next!.Value.GetKey();
 
                     // N is null. x and X are different.
 
@@ -222,67 +224,57 @@ internal static class ExprazorCore
                     // new : X Y Z ...   (Remove) X Y Z ...
                     if (newKey != null && newKey.Equals(nextKey) && oldKey == null)
                     {
-                        commands.Add(new RemoveChild(nodeId, newTail));
-                        oldHead++;
+                        commands.Add(new RemoveChild(nodeId, newChild.NodeId));
+                        oldChildren.RemoveFirst();
+                        newChildren.RemoveFirst();
                         continue;
                     }
+
                     // STEP 4:
-                    // if already patched, then skip.
-                    // newKeyd: [ A ...]
-                    // old : A x y z...  =>    x y z...
-                    // new : X Y Z...  (Skip)  X Y Z...
-                    if(oldKey != null && newKeyed.Contains(oldKey))
-                    {
-                        oldHead++;
-                        continue;
-                    }
-                    // STEP 5:
                     // if both null, patch and go next.
                     // old : N x y...    =>     x y...
                     // new : N X Y...  (Patch)  X Y...
                     if(newKey == null && oldKey == null)
                     {
                         Patch(context, nodeId, oldChild.NodeId, oldChild, newChild, commands);
-                        oldHead++; newHead++;
+                        oldChildren.RemoveFirst();
+                        newChildren.RemoveFirst();
                         continue;
                     }
-                    // STEP 6:
-                    // If newKey is null, but old key is not null, skip old.
-                    // old : x y z...   =>    y z...
-                    // new : N X Y... (Skip)  N X Y...
+                    // STEP 5:
+                    // If newKey is null, find similar node from old, if exists, patch with that, else remove the newVNode.
+                    // old : x y N...  =>   N x y...    =>     x y...
+                    // new : N X Y...       N X Y...  (Patch)  X Y...
                     if(newKey == null && oldKey != null)
                     {
-                        // Same as FirstOrDefault
-                        IExprazorNode? patchTarget = null;
-                        for(int i = oldHead; i < oldTail; i++)
-                        {
-                            var _oldChild = oldChildren[i];
-                            if (_oldChild.GetKey() == null && _oldChild.GetType() != newChild.GetType() && nullPatched.Contains(_oldChild) == false)
-                            {
-                                patchTarget = _oldChild;
-                            }
-                        }
+                        var type = newChild.GetType();
+                        var patchTarget = oldChildren.FirstOrDefault(x => x.GetKey() == null && x.GetType() == type);
                         if(patchTarget != null)
                         {
-                            nullPatched.Add(patchTarget);
                             commands.Add(new InsertBefore(nodeId, patchTarget.NodeId, oldChild.NodeId));
                             Patch(context, nodeId, patchTarget.NodeId, patchTarget, newChild, commands);
-                            newHead++;
+                            oldChildren.Remove(patchTarget);
+                            newChildren.RemoveFirst();
+                            continue;
+                        } else
+                        {
+                            commands.Add(new RemoveChild(nodeId, newChild.NodeId));
+                            newChildren.RemoveFirst();
+                            continue;
                         }
-                        oldHead++;
-                        continue;
                     }
-                    // STEP 7:
+                    // STEP 6:
                     // if both are same, Just patch and proceed.
                     // old : A y z...  => 
                     // new : A Y Z... (Patch)
                     if(oldKey != null && oldKey.Equals(newKey))
                     {
                         Patch(context, nodeId, oldChild.NodeId, oldChild, newChild, commands);
-                        oldHead++; newHead++;
+                        oldChildren.RemoveFirst();
+                        newChildren.RemoveFirst();
                         continue;
                     }
-                    // STEP 8:
+                    // STEP 7:
                     // If old keys contains current newKey, insert it into current head and patch.
                     //      ---------  (A will be skipped from next time.)
                     //      ↓       ↑
@@ -290,33 +282,30 @@ internal static class ExprazorCore
                     // new : A X Y...  (Sort)  A X Y...  (Patch)  X Y...
                     if(keyed.TryGetValue(newKey!, out var oldChildWithSameKey))
                     {
+                        oldChildren.Remove(oldChildWithSameKey);
                         commands.Add(new InsertBefore(nodeId, oldChildWithSameKey.NodeId, oldChild.NodeId));
                         Patch(context, nodeId, oldChildWithSameKey.NodeId, oldChildWithSameKey, newChild, commands);
-                        newKeyed.Add(newKey!);
-                        newHead++; // Don't skip oldChild.
+                        newChildren.RemoveFirst();
                         continue;
                     }
-                    // STEP 9:
+                    // STEP 8:
                     // if old keys don't contians 'X' and old one is null, create X node and proceed.
-                    // old : N x y...    =>       N x y... 
+                    // old : ...    =>            ... 
                     // new : X Y...   (Create X)  Y...
                     Patch(context, nodeId, oldChild.NodeId, null, newChild, commands);
-                    newHead++;
+                    newChildren.RemoveFirst();
                 }
 
-                // STEP 10:
-                // Remove disappeared old nodes.
-                while(oldHead <= oldTail)
+                // STEP 9:
+                // If oldchildren still left, remove them.
+                while(oldChildren.Any())
                 {
-                    if(oldChildren[oldHead].GetKey() == null)
+                    var oldChild = oldChildren.First!.Value;
+                    if(oldChild.GetKey() == null)
                     {
-                        commands.Add(new RemoveChild(nodeId, oldChildren[oldHead].NodeId));
-                        oldHead++;
+                        commands.Add(new RemoveChild(nodeId, oldChild.NodeId));
+                        oldChildren.RemoveFirst();
                     }
-                }
-                foreach(var (key, _oldVNode) in keyed)
-                {
-                    if (newKeyed.Contains(key) == false) commands.Add(new RemoveChild(nodeId, _oldVNode.NodeId));
                 }
             }
 

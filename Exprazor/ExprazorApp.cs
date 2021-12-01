@@ -17,18 +17,32 @@ namespace Exprazor
         Id _id = -1;
         internal Id NextId() => ++_id;
 
-        Action<List<DOMCommand>> _commandsHandler;
-        Component _rootComponent;
+        Action<List<DOMCommand>>? commandHandler;
+        Component rootComponent;
 
-        public ExprazorApp(Component rootComponent, Action<IEnumerable<DOMCommand>> commandHandler)
+        public ExprazorApp(Component rootComponent)
         {
-            this._commandsHandler = commandHandler;
-            this._rootComponent = rootComponent;
+            rootComponent.Context = this;
+            this.rootComponent = rootComponent; ;
         }
 
-        public void DispatchCommands(List<DOMCommand> commands)
+        public void SetCommandHandler(Action<List<DOMCommand>> commandHandler)
         {
-            _commandsHandler.Invoke(commands);
+            this.commandHandler = commandHandler;
+        }
+
+        public void Initialize(Action<List<DOMCommand>> commandHandler)
+        {
+            this.commandHandler = commandHandler;
+            var commands = new List<DOMCommand>();
+            ExprazorCore.CreateNode(this, rootComponent, commands);
+            DispatchCommands(commands);
+        }
+
+        internal void DispatchCommands(List<DOMCommand> commands)
+        {
+            if(commandHandler == null) throw new InvalidOperationException("Please set one or more handler");
+            commandHandler.Invoke(commands);
         }
     }
 }
