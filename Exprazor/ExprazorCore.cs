@@ -27,7 +27,7 @@ internal static class ExprazorCore
             {
                 foreach (var (key, value) in htmlNode.Attributes)
                 {
-                    PatchAttribute(newId, key, null, value, in commands);
+                    PatchAttribute(context, newId, key, null, value, in commands);
                 }
             }
             if (htmlNode.Children != null)
@@ -48,7 +48,7 @@ internal static class ExprazorCore
 
         return vdom.NodeId;
     }
-    static void PatchAttribute(Id nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands)
+    static void PatchAttribute(ExprazorApp context, Id nodeId, string key, object? oldValue, object? newValue, in List<DOMCommand> commands)
     {
         if (key == "key") { }
         else if (key.StartsWith("on"))
@@ -59,7 +59,9 @@ internal static class ExprazorCore
             }
             else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
             {
-                commands.Add(new SetVoidCallback(nodeId, key, ((long)((IntPtr)GCHandle.Alloc(newAct, GCHandleType.Weak)))));
+                var callbackId = context.NextId();
+                context.AddCallback(callbackId, key, newAct);
+                commands.Add(new SetVoidCallback(nodeId, key, callbackId));
             }
         }
         else
@@ -105,6 +107,7 @@ internal static class ExprazorCore
             if (oldVNode != null)
             {
                 commands.Add(new RemoveChild(parentId, nodeId));
+                oldVNode.Dispose();
             }
 
             return;
@@ -139,6 +142,7 @@ internal static class ExprazorCore
                 var createId = CreateNode(context, newVNode, commands);
                 commands.Add(new InsertBefore(parentId, createId, nodeId));
                 commands.Add(new RemoveChild(parentId, oldVNode.NodeId));
+                oldVNode.Dispose();
             }
             else
             {
@@ -151,7 +155,7 @@ internal static class ExprazorCore
                     newHTMLNode.Attributes?.TryGetValue(key, out newValue);
                     if (oldValue != newValue)
                     {
-                        PatchAttribute(nodeId, key, oldValue, newValue, commands);
+                        PatchAttribute(context, nodeId, key, oldValue, newValue, commands);
                     }
                 }
             }
@@ -202,7 +206,9 @@ internal static class ExprazorCore
             {
                 while(oldChildren.Any())
                 {
-                    commands.Add(new RemoveChild(nodeId, oldChildren.First!.Value.NodeId));
+                    var nodeToRemove = oldChildren.First!.Value;
+                    commands.Add(new RemoveChild(nodeId, nodeToRemove.NodeId));
+                    nodeToRemove.Dispose();
                     oldChildren.RemoveFirst();
                 }
             } else
@@ -224,7 +230,8 @@ internal static class ExprazorCore
                     // new : X Y Z ...   (Remove) X Y Z ...
                     if (newKey != null && newKey.Equals(nextKey) && oldKey == null)
                     {
-                        commands.Add(new RemoveChild(nodeId, newChild.NodeId));
+                        commands.Add(new RemoveChild(nodeId, oldChild.NodeId));
+                        oldChild.Dispose();
                         oldChildren.RemoveFirst();
                         newChildren.RemoveFirst();
                         continue;
@@ -242,7 +249,7 @@ internal static class ExprazorCore
                         continue;
                     }
                     // STEP 5:
-                    // If newKey is null, find similar node from old, if exists, patch with that, else remove the newVNode.
+                    // If newKey is null, find similar node from old, if exists, patch with that, else create new node.
                     // old : x y N...  =>   N x y...    =>     x y...
                     // new : N X Y...       N X Y...  (Patch)  X Y...
                     if(newKey == null && oldKey != null)
@@ -258,7 +265,7 @@ internal static class ExprazorCore
                             continue;
                         } else
                         {
-                            commands.Add(new RemoveChild(nodeId, newChild.NodeId));
+                            CreateNode(context, newChild, commands);
                             newChildren.RemoveFirst();
                             continue;
                         }
@@ -304,12 +311,13 @@ internal static class ExprazorCore
                     if(oldChild.GetKey() == null)
                     {
                         commands.Add(new RemoveChild(nodeId, oldChild.NodeId));
+                        oldChild.Dispose();
                         oldChildren.RemoveFirst();
                     }
                 }
             }
 
-            newVNode.NodeId = oldVNode.NodeId;
+            newVNode.NodeId = nodeId;
         }
     }
 }

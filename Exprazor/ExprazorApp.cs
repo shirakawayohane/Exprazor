@@ -19,6 +19,7 @@ namespace Exprazor
 
         Action<List<DOMCommand>>? commandHandler;
         Component rootComponent;
+        Dictionary<Id, Dictionary<string, object>> callbacks = new();
 
         public ExprazorApp(Component rootComponent)
         {
@@ -43,6 +44,38 @@ namespace Exprazor
         {
             if(commandHandler == null) throw new InvalidOperationException("Please set one or more handler");
             commandHandler.Invoke(commands);
+        }
+
+        internal void AddCallback(Id nodeId, string key, object callback)
+        {
+            if(callbacks.TryGetValue(nodeId, out var callbacksOfNode))
+            {
+                callbacksOfNode.Add(key, callback);
+            } else
+            {
+                callbacks.Add(nodeId, new Dictionary<string, object>()
+                {
+                    [key] = callback
+                });
+            }
+        }
+
+        internal void RemoveCallback(Id nodeId, string key)
+        {
+            callbacks[nodeId].Remove(key);
+        }
+
+        internal void TryRemoveCallbacksOfNode(Id nodeId)
+        {
+            if(callbacks.ContainsKey(nodeId))
+            {
+                callbacks.Remove(nodeId);
+            }
+        }
+
+        public void InvokeVoidCallback(Id nodeId, string key)
+        {
+            (callbacks[nodeId][key] as Action)!.Invoke();
         }
     }
 }

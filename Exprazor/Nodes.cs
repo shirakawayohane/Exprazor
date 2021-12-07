@@ -12,7 +12,7 @@ namespace Exprazor
     using Id = System.Int64;
     using static ExprazorCore;
 
-    public interface IExprazorNode
+    public interface IExprazorNode : IDisposable
     {
         object? GetKey();
         public Id NodeId { get; set; }
@@ -27,6 +27,9 @@ namespace Exprazor
         }
         public string Text { get; init; }
         public Id NodeId { get; set; }
+
+        public void Dispose() {/* Do nothing for now. */}
+
         public object? GetKey() => Text;
     }
 
@@ -38,19 +41,34 @@ namespace Exprazor
             Tag = tag;
             Attributes = attributes;
             Children = children;
-            // NodeIdはあとから
+            // NodeId will be asigned later.
         }
         public ExprazorApp Context { get; }
         public string Tag { get; init; }
         public Attributes? Attributes { get; init; }
         public IEnumerable<IExprazorNode>? Children { get; init; }
         public Id NodeId { get; set; }
+
+        public void Dispose()
+        {
+            if (Attributes != null) {
+                Context.TryRemoveCallbacksOfNode(NodeId);
+            }
+            if(Children != null)
+            {
+                foreach(var child in Children)
+                {
+                    child.Dispose();
+                }
+            }
+        }
+
         public object GetKey() => Attributes?.TryGetValue("key", out var key) ?? false ? key : NodeId;
     }
 
     public abstract class Component : IExprazorNode
     {
-        // Elmで非nullを担保
+        // Non-nullability is ensured by Elm function.
         internal ExprazorApp Context { get; set; } = default!;
         public Id ParentId { get; init; }
         public Id NodeId
@@ -98,5 +116,13 @@ namespace Exprazor
         }
 
         protected internal abstract IExprazorNode Render(object state);
+
+        public void Dispose()
+        {
+            if(lastTree != null)
+            {
+                lastTree.Dispose();
+            }
+        }
     }
 }

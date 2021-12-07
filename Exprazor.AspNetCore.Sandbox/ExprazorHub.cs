@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 
 namespace Exprazor.AspNetCore;
+using Id = System.Int64;
 public class ExprazorHub : Hub
 {
     ExprazorApp app { get; }
@@ -20,9 +21,10 @@ public class ExprazorHub : Hub
         return Task.CompletedTask;
     }
 
-    public async Task SendAction(long actionPtr)
+    public Task InvokeVoid(Id nodeId, string key)
     {
-        // UpdateAction
-        var action = (((GCHandle)new IntPtr(actionPtr)).Target as Action);
+        app.InvokeVoidCallback(nodeId, key);
+
+        return Task.CompletedTask;
     }
 }
