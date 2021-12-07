@@ -59,9 +59,8 @@ internal static class ExprazorCore
             }
             else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
             {
-                var callbackId = context.NextId();
-                context.AddCallback(callbackId, key, newAct);
-                commands.Add(new SetVoidCallback(nodeId, key, callbackId));
+                context.AddCallback(nodeId, key, newAct);
+                commands.Add(new SetVoidCallback(nodeId, key));
             }
         }
         else

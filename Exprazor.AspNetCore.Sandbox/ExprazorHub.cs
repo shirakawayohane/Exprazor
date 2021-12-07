@@ -15,7 +15,7 @@ public class ExprazorHub : Hub
     {
         app.Initialize(commands =>
         {
-            Clients.Caller.SendAsync("onCommands", commands);
+            Clients.Caller.SendAsync("handleCommands", commands);
         });
 
         return Task.CompletedTask;
