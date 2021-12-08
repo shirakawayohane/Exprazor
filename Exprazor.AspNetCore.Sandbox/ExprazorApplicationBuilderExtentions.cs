@@ -2,12 +2,22 @@
 using Exprazor.AspNetCore.Sandbox;
 using System.Net;
 using System.Net.WebSockets;
+using System.Text.Json;
 
 namespace Microsoft.AspNetCore.Builder
 {
 
     public static partial class ExprazorApplicationBuilderExtentions
     {
+        static JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
+        {
+            Converters =
+            {
+                new ClientCommandDeserializer(),
+                new ServerCommandSerializer(),
+            }
+        };
+
         public static void MapExprazor(this IApplicationBuilder app, Action<ExprazorRouter> router)
         {
             var expRouter = app.ApplicationServices.GetRequiredService<ExprazorRouter>();
@@ -16,6 +26,7 @@ namespace Microsoft.AspNetCore.Builder
 
         public static void UseExprazor(this IApplicationBuilder app)
         {
+            app.UseWebSockets();
             app.Use(async (context, next) =>
             {
                 if (context.Request.Path.Value == null)
@@ -46,16 +57,38 @@ namespace Microsoft.AspNetCore.Builder
 
             async Task HandleConnection(HttpContext context, WebSocket webSocket, ExprazorApp app)
             {
-                Action<IEnumerable<DOMCommand>> commandHandler = (commands) =>
+#if DEBUG
+                using (var memory = new MemoryStream())
                 {
-
+                    JsonSerializer.Serialize<object>(new SetAsDevelopment(), jsonSerializerOptions);
+                    await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Text, false, CancellationToken.None);
+                }
+#endif
+                Func<IEnumerable<DOMCommand>,Task> commandHandler = async (commands) =>
+                {
+                    using (var memory = new MemoryStream()) {
+                        JsonSerializer.Serialize<ServerCommand>(memory, new HandleCommands(commands), jsonSerializerOptions);
+                        await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
                 };
+
                 app.CommandHandler += commandHandler;
                 var buffer = new byte[4096];
                 WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 while (!result.CloseStatus.HasValue)
                 {
-                    await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                    var slice = new ArraySegment<byte>(buffer, 0, result.Count);
+                    var clientCommand = JsonSerializer.Deserialize<ClientCommand>(slice, jsonSerializerOptions);
+
+                    if (clientCommand is Connected connected)
+                    {
+                        app.Start();
+                    }
+                    else if(clientCommand is InvokeVoid invokeVoid)
+                    {
+                        app.InvokeVoidCallback(invokeVoid.Id, invokeVoid.Key);
+                    }
+
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
                 app.CommandHandler -= commandHandler;

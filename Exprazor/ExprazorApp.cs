@@ -19,7 +19,7 @@ namespace Exprazor
         internal Id NextId() => ++_id;
 
         internal List<DOMCommand> commands { get; } = new(256);
-        public event Action<List<DOMCommand>>? CommandHandler;
+        public event Func<List<DOMCommand>,Task>? CommandHandler;
         Component rootComponent = default!;
         Dictionary<Id, Dictionary<string, object>> callbacks = new();
 
@@ -34,6 +34,9 @@ namespace Exprazor
                 NodeId = ret.NextId(),
                 Props = props
             };
+            ret.rootComponent.Context = ret;
+            // initialize state.
+            ret.rootComponent.State = ret.rootComponent.PropsChanged(props);
             return ret;
         }
 
@@ -42,9 +45,12 @@ namespace Exprazor
             rootComponent.SetState(rootComponent.State!);
         }
 
-        internal void DispatchCommands()
+        internal async Task DispatchAsync()
         {
-            CommandHandler?.Invoke(commands);
+            if(CommandHandler != null)
+            {
+                await CommandHandler.Invoke(commands);
+            }
             commands.Clear();
         }
 

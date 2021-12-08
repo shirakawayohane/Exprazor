@@ -17,20 +17,30 @@ namespace Microsoft.AspNetCore.Builder
         {
             ServerCommandType Type { get; }
         };
-        record HandleCommands(DOMCommand[] commands) : ServerCommand
+        record struct HandleCommands(IEnumerable<DOMCommand> Commands) : ServerCommand
         {
 #if DEBUG
-            public ServerCommandType Type => "handleCommands";
+            public ServerCommandType Type => nameof(HandleCommands);
 #else
-            public Type Type => 0;
+            public ServerCommandType Type => 0;
+#endif
+        }
+
+        record struct SetAsDevelopment() : ServerCommand
+        {
+#if DEBUG
+            public ServerCommandType Type => nameof(SetAsDevelopment);
+#else
+            public ServerCommandType Type => 1;
 #endif
         }
 
         public interface ClientCommand { }
 
-        record InvokeVoid(Id Id, string Key) : ClientCommand { } // 0
+        record struct Connected() : ClientCommand { } // "Hello"
+        record struct InvokeVoid(Id Id, string Key) : ClientCommand { } // 1
 
-        public class ClientCommandDeserializer : JsonConverter<ClientCommand>
+        class ClientCommandDeserializer : JsonConverter<ClientCommand>
         {
             // Debug: ["invokeVoid", 1, "onclick"]
             // Prod: [0, 1, "onclick"]
@@ -46,21 +56,27 @@ namespace Microsoft.AspNetCore.Builder
                 reader.Read();
                 switch (type)
                 {
+                    case "Hello":
+                        return new Connected();
 #if DEBUG
                     case nameof(InvokeVoid):
 #else
-                    case 0:
+                    case 1:
 #endif
                         var id = reader.GetInt64();
                         reader.Read();
                         string? key = reader.GetString()!;
+
                         if (key == null) throw new InvalidDataException("Callback key cannot be null.");
+
                         if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException();
+
                         reader.Read();
                         return new InvokeVoid(id, key);
                     default:
                         throw new InvalidDataException("Got unrecognized command.");
                 }
+
             }
 
             public override void Write(Utf8JsonWriter writer, ClientCommand value, JsonSerializerOptions options)
@@ -69,7 +85,7 @@ namespace Microsoft.AspNetCore.Builder
             }
         }
 
-        public class ServerCommandSerializer : JsonConverter<ServerCommand>
+        class ServerCommandSerializer : JsonConverter<ServerCommand>
         {
             public override ServerCommand? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
@@ -79,14 +95,20 @@ namespace Microsoft.AspNetCore.Builder
             public override void Write(Utf8JsonWriter writer, ServerCommand value, JsonSerializerOptions options)
             {
                 writer.WriteStartObject();
-                var _type = options.PropertyNamingPolicy?.ConvertName(value.Type) ?? value.Type;
-                writer.WritePropertyName(_type);
+                if(value is HandleCommands handleCommands)
+                {
 #if DEBUG
-                writer.WriteStringValue(value.Type);
+                    writer.WriteString(nameof(ServerCommand.Type), handleCommands.Type);
 #else
+                    writer.WriteNumber(nameof(ServerCommand.Type), handleCommands.Type);
 #endif
+                    writer.WritePropertyName(nameof(HandleCommands.Commands));
+                    JsonSerializer.Serialize<IEnumerable<object>>(writer, handleCommands.Commands.Cast<object>(), options);
+                }
+                writer.WriteEndObject();
             }
         }
+
     }
 
 }

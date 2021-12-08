@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/exprazor-client.min.js"
+    "build": "esbuild ./src/index.ts --sourcemap --bundle --outfile=../wwwroot/exprazor-client.js",
+    "build-prod": "NODE_ENV=production || set NODE_ENV=production && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/exprazor-client.min.js"
   },
   "author": "WiZLite <black_rais0n.detre@icloud.com>",
   "license": "MIT",

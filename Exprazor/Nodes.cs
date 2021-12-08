@@ -71,17 +71,7 @@ namespace Exprazor
         // Non-nullability is ensured by Elm function.
         internal ExprazorApp Context { get; set; } = default!;
         public Id ParentId { get; init; } = ExprazorApp.MOUNT_ID;
-        public Id NodeId
-        {
-            get
-            {
-                return lastTree!.NodeId;
-            }
-            set
-            {
-                lastTree!.NodeId = value;
-            }
-        }
+        public Id NodeId { get; set; }
         public virtual object GetKey() => Props;
         internal IExprazorNode? lastTree { get; set; }
         /// <summary>
@@ -106,12 +96,12 @@ namespace Exprazor
             return ret;
         }
         protected IExprazorNode Text(string text) => new TextNode(text);
-        internal void SetState(object newState)
+        internal async void SetState(object newState)
         {
             var newTree = Render(newState);
             Patch(Context, NodeId, ParentId, lastTree, newTree, Context.commands);
             lastTree = newTree;
-            Context.DispatchCommands();
+            await Context.DispatchAsync();
         }
 
         protected internal abstract IExprazorNode Render(object state);
@@ -132,7 +122,7 @@ namespace Exprazor
         protected abstract TState PropsChanged(TProps props);
         protected abstract IExprazorNode Render(TState state);
 
-        protected internal override TState PropsChanged(object props) => ((TState)PropsChanged(props));
+        protected internal override object PropsChanged(object props) => PropsChanged((props as TProps)!);
 
         protected internal override IExprazorNode Render(object state) => Render((state as TState)!)!;
 

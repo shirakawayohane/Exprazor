@@ -7,12 +7,6 @@ namespace Exprazor.AspNetCore.Sandbox
 {
     public class ExprazorRouter
     {
-        IEndpointRouteBuilder builder;
-        public ExprazorRouter(IEndpointRouteBuilder builder)
-        {
-            this.builder = builder;
-        }
-
         record RoutingUnit(Regex Pattern, Func<string[]?, ExprazorApp> Initializer);
 
         List<RoutingUnit> _routes = new();
@@ -23,8 +17,8 @@ namespace Exprazor.AspNetCore.Sandbox
             {
                 if (unit.Pattern.IsMatch(path))
                 {
-                    var matches = unit.Pattern.Matches(path);
-                    return unit.Initializer(matches.Select(x => x.Value).ToArray());
+                    var groups = unit.Pattern.Match(path).Groups;
+                    return unit.Initializer(groups?.Cast<Group>().Skip(1).Select(x => x.Value).ToArray());
                 }
             }
 
