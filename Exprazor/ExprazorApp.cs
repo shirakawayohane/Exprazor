@@ -14,38 +14,38 @@ namespace Exprazor
     using Id = System.Int64;
     public class ExprazorApp
     {
-        const Id MOUNT_ID = -1;
-        Id _id = -1;
+        public const Id MOUNT_ID = -1;
+        Id _id = MOUNT_ID;
         internal Id NextId() => ++_id;
 
-        Action<List<DOMCommand>>? commandHandler;
-        Component rootComponent;
+        internal List<DOMCommand> commands { get; } = new(256);
+        public event Action<List<DOMCommand>>? CommandHandler;
+        Component rootComponent = default!;
         Dictionary<Id, Dictionary<string, object>> callbacks = new();
 
-        public ExprazorApp(Component rootComponent)
+        private ExprazorApp() {}
+
+        public static ExprazorApp Create<TComponent>(object props) where TComponent : Component, new()
         {
-            rootComponent.Context = this;
-            this.rootComponent = rootComponent;
+            var ret = new ExprazorApp();
+            ret.rootComponent = new TComponent
+            {
+                ParentId = MOUNT_ID,
+                NodeId = ret.NextId(),
+                Props = props
+            };
+            return ret;
         }
 
-        public void SetCommandHandler(Action<List<DOMCommand>> commandHandler)
+        public void Start()
         {
-            this.commandHandler = commandHandler;
+            rootComponent.SetState(rootComponent.State!);
         }
 
-        public void Initialize(Action<List<DOMCommand>> commandHandler)
+        internal void DispatchCommands()
         {
-            this.commandHandler = commandHandler;
-            var commands = new List<DOMCommand>();
-            var rootId = ExprazorCore.CreateNode(this, rootComponent, commands);
-            commands.Add(new AppendChild(MOUNT_ID, rootId));
-            DispatchCommands(commands);
-        }
-
-        internal void DispatchCommands(List<DOMCommand> commands)
-        {
-            if(commandHandler == null) throw new InvalidOperationException("Please set one or more handler");
-            commandHandler.Invoke(commands);
+            CommandHandler?.Invoke(commands);
+            commands.Clear();
         }
 
         internal void AddCallback(Id nodeId, string key, object callback)

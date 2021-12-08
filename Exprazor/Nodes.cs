@@ -70,7 +70,7 @@ namespace Exprazor
     {
         // Non-nullability is ensured by Elm function.
         internal ExprazorApp Context { get; set; } = default!;
-        public Id ParentId { get; init; }
+        public Id ParentId { get; init; } = ExprazorApp.MOUNT_ID;
         public Id NodeId
         {
             get
@@ -85,17 +85,17 @@ namespace Exprazor
         public virtual object GetKey() => Props;
         internal IExprazorNode? lastTree { get; set; }
         /// <summary>
-        /// Patch中にあとから代入される
+        /// State will be assigned later in `Patch` function.
         /// </summary>
         protected internal object? State { get; set; } = default!;
         /// <summary>
-        /// Elm<TComponent>で非nullを担保
+        /// Non-nullability is ensured by Elm<TComponent> function.
         /// </summary>
-        protected internal object Props { get; init; } = default!;
-        protected internal abstract void Init();
+        protected internal object Props { get; set; } = default!;
+        protected internal virtual void Init() { }
         protected internal abstract object /* State */ PropsChanged(object props);
         protected IExprazorNode Elm(string tag, Attributes? attributes, IEnumerable<IExprazorNode>? children) => new HTMLNode(Context, tag, attributes, children);
-        protected IExprazorNode Elm<TComponent>(object props) where TComponent : Component, new()
+        internal IExprazorNode Elm<TComponent>(object props) where TComponent : Component, new()
         {
             var ret = new TComponent
             {
@@ -106,13 +106,12 @@ namespace Exprazor
             return ret;
         }
         protected IExprazorNode Text(string text) => new TextNode(text);
-        protected void SetState(object newState)
+        internal void SetState(object newState)
         {
-            var commands = new List<DOMCommand>();
             var newTree = Render(newState);
-            Patch(Context, NodeId, ParentId, lastTree, newTree, commands);
+            Patch(Context, NodeId, ParentId, lastTree, newTree, Context.commands);
             lastTree = newTree;
-            Context.DispatchCommands(commands);
+            Context.DispatchCommands();
         }
 
         protected internal abstract IExprazorNode Render(object state);
@@ -124,5 +123,21 @@ namespace Exprazor
                 lastTree.Dispose();
             }
         }
+    }
+
+    public abstract class Component<TProps, TState> : Component where TProps : class where TState : class
+    {
+        public Component() {}
+
+        protected abstract TState PropsChanged(TProps props);
+        protected abstract IExprazorNode Render(TState state);
+
+        protected internal override TState PropsChanged(object props) => ((TState)PropsChanged(props));
+
+        protected internal override IExprazorNode Render(object state) => Render((state as TState)!)!;
+
+        protected IExprazorNode Elm<TComponent>(TProps props) where TComponent : Component<TProps, TState>, new() => base.Elm<TComponent>(props);
+
+        protected void SetState(TState newState) => base.SetState(newState);
     }
 }
