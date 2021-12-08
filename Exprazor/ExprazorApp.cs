@@ -14,6 +14,7 @@ namespace Exprazor
     using Id = System.Int64;
     public class ExprazorApp
     {
+        const Id MOUNT_ID = -1;
         Id _id = -1;
         internal Id NextId() => ++_id;
 
@@ -24,7 +25,7 @@ namespace Exprazor
         public ExprazorApp(Component rootComponent)
         {
             rootComponent.Context = this;
-            this.rootComponent = rootComponent; ;
+            this.rootComponent = rootComponent;
         }
 
         public void SetCommandHandler(Action<List<DOMCommand>> commandHandler)
@@ -36,7 +37,8 @@ namespace Exprazor
         {
             this.commandHandler = commandHandler;
             var commands = new List<DOMCommand>();
-            ExprazorCore.CreateNode(this, rootComponent, commands);
+            var rootId = ExprazorCore.CreateNode(this, rootComponent, commands);
+            commands.Add(new AppendChild(MOUNT_ID, rootId));
             DispatchCommands(commands);
         }
 
