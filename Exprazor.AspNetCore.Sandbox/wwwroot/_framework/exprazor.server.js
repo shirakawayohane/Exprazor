@@ -1,104 +1,66 @@
 (() => {
   // src/ClientCommand.ts
-  function isHandleCommandsProd(value) {
-    return value.Type === 0;
-  }
   function isHandleCommandsDev(value) {
     return value.Type === "HandleCommands";
   }
-  var isHandleCommands = __DEV__ ? isHandleCommandsDev : isHandleCommandsProd;
+  var isHandleCommands = true ? isHandleCommandsDev : isHandleCommandsProd;
 
   // src/DOMCommands.ts
-  function isSetStringAttributeProd(value) {
-    return value.Type === 1;
-  }
   function isSetStringAttributeDev(value) {
     return value.Type === "SetStringAttribute";
   }
-  var isSetStringAttribute = __DEV__ ? isSetStringAttributeDev : isSetStringAttributeProd;
-  function isSetNumberAttributeProd(value) {
-    return value.Type === 2;
-  }
+  var isSetStringAttribute = true ? isSetStringAttributeDev : isSetStringAttributeProd;
   function isSetNumberAttributeDev(value) {
     return value.Type === "SetNumberAttribute";
   }
-  var isSetNumberAttribute = __DEV__ ? isSetNumberAttributeDev : isSetNumberAttributeProd;
-  function isSetBooleanAttributeProd(value) {
-    return value.Type === 3;
-  }
+  var isSetNumberAttribute = true ? isSetNumberAttributeDev : isSetNumberAttributeProd;
   function isSetBooleanAttributeDev(value) {
     return value.Type === "SetBooleanAttribute";
   }
-  var isSetBooleanAttribute = __DEV__ ? isSetBooleanAttributeDev : isSetBooleanAttributeProd;
-  function isRemoveAttributeProd(value) {
-    return value.Type === 4;
-  }
+  var isSetBooleanAttribute = true ? isSetBooleanAttributeDev : isSetBooleanAttributeProd;
   function isRemoveAttributeDev(value) {
     return value.Type === "RemoveAttribute";
   }
-  var isRemoveAttribute = __DEV__ ? isRemoveAttributeDev : isRemoveAttributeProd;
-  function isSetVoidCallbackProd(value) {
-    return value.Type === 5;
-  }
+  var isRemoveAttribute = true ? isRemoveAttributeDev : isRemoveAttributeProd;
   function isSetVoidCallbackDev(value) {
     return value.Type === "SetVoidCallback";
   }
-  var isSetVoidCallback = __DEV__ ? isSetVoidCallbackDev : isSetVoidCallbackProd;
-  function isRemoveCallbackProd(value) {
-    return value.Type === 6;
-  }
+  var isSetVoidCallback = true ? isSetVoidCallbackDev : isSetVoidCallbackProd;
   function isRemoveCallbackDev(value) {
     return value.Type === "RemoveCallback";
   }
-  var isRemoveCallback = __DEV__ ? isRemoveCallbackDev : isRemoveCallbackProd;
-  function isCreateTextNodeProd(value) {
-    return value.Type === 7;
-  }
+  var isRemoveCallback = true ? isRemoveCallbackDev : isRemoveCallbackProd;
   function isCreateTextNodeDev(value) {
     return value.Type === "CreateTextNode";
   }
-  var isCreateTextNode = __DEV__ ? isCreateTextNodeDev : isCreateTextNodeProd;
-  function isCreateElementProd(value) {
-    return value.Type === 8;
-  }
+  var isCreateTextNode = true ? isCreateTextNodeDev : isCreateTextNodeProd;
   function isCreateElementDev(value) {
     return value.Type === "CreateElement";
   }
-  var isCreateElement = __DEV__ ? isCreateElementDev : isCreateElementProd;
-  function isAppendChildProd(value) {
-    return value.Type === 9;
-  }
+  var isCreateElement = true ? isCreateElementDev : isCreateElementProd;
   function isAppendChildDev(value) {
     return value.Type === "AppendChild";
   }
-  var isAppendChild = __DEV__ ? isAppendChildDev : isAppendChildProd;
-  function isSetTextNodeValueProd(value) {
-    return value.Type === 10;
-  }
+  var isAppendChild = true ? isAppendChildDev : isAppendChildProd;
   function isSetTextNodeValueDev(value) {
     return value.Type === "SetTextNodeValue";
   }
-  var isSetTextNodeValue = __DEV__ ? isSetTextNodeValueDev : isSetTextNodeValueProd;
-  function isInsertBeforeProd(value) {
-    return value.Type === 11;
-  }
+  var isSetTextNodeValue = true ? isSetTextNodeValueDev : isSetTextNodeValueProd;
   function isInsertBeforeDev(value) {
     return value.Type === "InsertBefore";
   }
-  var isInsertBefore = __DEV__ ? isInsertBeforeDev : isInsertBeforeProd;
-  function isRemoveChildProd(value) {
-    return value.Type === 12;
-  }
+  var isInsertBefore = true ? isInsertBeforeDev : isInsertBeforeProd;
   function isRemoveChildDev(value) {
     return value.Type === "RemoveChild";
   }
-  var isRemoveChild = __DEV__ ? isRemoveChildDev : isRemoveChildProd;
+  var isRemoveChild = true ? isRemoveChildDev : isRemoveChildProd;
 
   // src/index.ts
   var idToElement = /* @__PURE__ */ new Map();
   var elementToId = /* @__PURE__ */ new Map();
   var MOUNT_ID = -1;
-  idToElement[MOUNT_ID] = document.querySelector("body");
+  idToElement.set(0, document.querySelector("#root"));
+  console.log(idToElement);
   elementToId[idToElement[MOUNT_ID]] = MOUNT_ID;
   var location = window.location;
   var hubUri = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${location.pathname}counter/123`;
@@ -107,8 +69,10 @@
     socket.send(JSON.stringify(["Hello"]));
   });
   socket.addEventListener("message", (event) => {
-    if (isHandleCommands(event.data)) {
-      event.data.Commands.forEach((cmd) => {
+    console.log("eventdata : ", event);
+    const data = JSON.parse(event.data);
+    if (isHandleCommands(data)) {
+      data.Commands.forEach((cmd) => {
         if (isSetStringAttribute(cmd)) {
           idToElement.get(cmd.Id).setAttribute(cmd.Key, cmd.Value);
         } else if (isSetNumberAttribute(cmd)) {
@@ -124,7 +88,7 @@
         } else if (isSetVoidCallback(cmd)) {
           switch (cmd.Key) {
             default:
-              var type = __DEV__ ? "invokeVoid" : 1;
+              var type = true ? "InvokeVoid" : 1;
               idToElement.get(cmd.Id)[cmd.Key] = () => socket.send(JSON.stringify([type, cmd.Id, cmd.Key]));
               break;
           }
@@ -143,6 +107,10 @@
         } else if (isSetTextNodeValue(cmd)) {
           idToElement.get(cmd.Id).textContent = cmd.Text;
         } else if (isInsertBefore(cmd)) {
+          console.log(idToElement);
+          console.log(cmd.ParentId);
+          console.log(idToElement.get(cmd.ParentId));
+          console.log(idToElement.has(cmd.ParentId));
           idToElement.get(cmd.ParentId).insertBefore(idToElement.get(cmd.NewId), idToElement.get(cmd.BeforeId));
         } else if (isRemoveChild(cmd)) {
           const childToRemove = idToElement.get(cmd.ChildId);
@@ -159,4 +127,4 @@
     }
   });
 })();
-//# sourceMappingURL=exprazor-client.js.map
+//# sourceMappingURL=exprazor.server.js.map

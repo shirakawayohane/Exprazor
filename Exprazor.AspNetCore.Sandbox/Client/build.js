@@ -6,7 +6,4 @@ build({
     outbase: "./src",
     outdir: "./build",
     platform: "browser",
-    define: {
-        "__DEV__" : true
-    }
 });

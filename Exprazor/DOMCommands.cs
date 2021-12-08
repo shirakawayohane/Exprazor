@@ -54,7 +54,7 @@ namespace Exprazor
 #endif
     }
 
-    public record struct SetVoidCallback(Id NodeId, string Key) : DOMCommand
+    public record struct SetVoidCallback(Id Id, string Key) : DOMCommand
     {
 #if DEBUG
         public CommandType Type => nameof(SetVoidCallback);

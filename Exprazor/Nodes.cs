@@ -23,13 +23,18 @@ namespace Exprazor
         internal TextNode(string text)
         {
             Text = text;
-            // NodeIdはPatch時にSetされる。
         }
+
+        public static implicit operator TextNode(string str)
+        {
+            return new TextNode(str);
+        }
+
         public string Text { get; init; }
+
         public Id NodeId { get; set; }
 
-        public void Dispose() {/* Do nothing for now. */}
-
+        public void Dispose() {/* Do nothing. */}
         public object? GetKey() => Text;
     }
 
@@ -63,7 +68,7 @@ namespace Exprazor
             }
         }
 
-        public object GetKey() => Attributes?.TryGetValue("key", out var key) ?? false ? key : NodeId;
+        public object? GetKey() => (Attributes?.TryGetValue("key", out var key) ?? false) ? key : null;
     }
 
     public abstract class Component : IExprazorNode
@@ -85,6 +90,9 @@ namespace Exprazor
         protected internal virtual void Init() { }
         protected internal abstract object /* State */ PropsChanged(object props);
         protected IExprazorNode Elm(string tag, Attributes? attributes, IEnumerable<IExprazorNode>? children) => new HTMLNode(Context, tag, attributes, children);
+        
+        protected IExprazorNode Elm(string tag, Attributes? attributes, params IExprazorNode[] children) => new HTMLNode(Context, tag, attributes, children);
+       
         internal IExprazorNode Elm<TComponent>(object props) where TComponent : Component, new()
         {
             var ret = new TComponent

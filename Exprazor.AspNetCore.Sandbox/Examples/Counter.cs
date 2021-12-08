@@ -12,9 +12,9 @@
             return Elm("div", new() { ["id"] = "counter" }, new[]
             {
                 Text(state.Value.ToString()),
-                Elm("button", new() {
-                    ["onclick"] = () => SetState(state with { Value = state.Value + 1 })
-                }, null)
+                Elm("button", new() { ["onclick"] = () => SetState(state with { Value = state.Value + 1 })},
+                    Text("+")
+                )
             });
         }
     }

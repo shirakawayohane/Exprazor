@@ -57,13 +57,6 @@ namespace Microsoft.AspNetCore.Builder
 
             async Task HandleConnection(HttpContext context, WebSocket webSocket, ExprazorApp app)
             {
-#if DEBUG
-                using (var memory = new MemoryStream())
-                {
-                    JsonSerializer.Serialize<object>(new SetAsDevelopment(), jsonSerializerOptions);
-                    await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Text, false, CancellationToken.None);
-                }
-#endif
                 Func<IEnumerable<DOMCommand>,Task> commandHandler = async (commands) =>
                 {
                     using (var memory = new MemoryStream()) {
@@ -77,6 +70,7 @@ namespace Microsoft.AspNetCore.Builder
                 WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 while (!result.CloseStatus.HasValue)
                 {
+                    Console.WriteLine("read data");
                     var slice = new ArraySegment<byte>(buffer, 0, result.Count);
                     var clientCommand = JsonSerializer.Deserialize<ClientCommand>(slice, jsonSerializerOptions);
 
@@ -91,6 +85,7 @@ namespace Microsoft.AspNetCore.Builder
 
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
+                Console.WriteLine("Connection closed : " + result.CloseStatus.Value);
                 app.CommandHandler -= commandHandler;
                 await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
             }

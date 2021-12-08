@@ -201,39 +201,3 @@ function isRemoveChildDev(value:any) : value is RemoveChild {
     return value.Type === "RemoveChild"
 }
 export const isRemoveChild : (value:any) => value is RemoveChild = (__DEV__ ? isRemoveChildDev : isRemoveChildProd);
-
-
-
-// export function isSetNumberAttribute(value : any) : value is SetNumberAttribute {
-//     return isDOMCommandCore(value, "SetNumberAttribute", 2);
-// }
-// export function isSetBooleanAttribute(value : any) : value is SetBooleanAttribute {
-//     return isDOMCommandCore(value, "SetBooleanAttribute", 3);
-// }
-// export function isRemoveAttribute(value: any) : value is RemoveAttribute {
-//     return isDOMCommandCore(value, "RemoveAttribute", 4);
-// }
-// export function isSetVoidCallback(value:any): value is SetVoidCallback {
-//     return isDOMCommandCore(value, "SetVoidCallback", 5);
-// }
-// export function isRemoveCallback(value: any):value is RemoveCallback {
-//     return isDOMCommandCore(value, "RemoveCallback", 6);
-// }
-// export function isCreateTextNode(value:any):value is CreateTextNode {
-//     return isDOMCommandCore(value, "CreateTextNode", 7);
-// }
-// export function isCreateElement(value:any):value is CreateElement {
-//     return isDOMCommandCore(value, "CreateElement", 8);
-// }
-// export function isAppendChild(value:any):value is AppendChild {
-//     return isDOMCommandCore(value, "AppendChild", 9 );
-// }
-// export function isSetTextNodeValue(value:any): value is SetTextNodeValue {
-//     return isDOMCommandCore(value, "SetTextNodeValue", 10);
-// }
-// export function isInsertBefore(value:any):value is InsertBefore {
-//     return isDOMCommandCore(value, "InsertBefore", 11);
-// }
-// export function isRemoveChild(value:any):value is RemoveChild {
-//     return isDOMCommandCore(value, "RemoveChild", 12);
-// }

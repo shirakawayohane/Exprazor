@@ -5,8 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "esbuild ./src/index.ts --sourcemap --bundle --outfile=../wwwroot/exprazor-client.js",
-    "build-prod": "NODE_ENV=production || set NODE_ENV=production && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/exprazor-client.min.js"
+    "dev": "esbuild ./src/index.ts --watch --define:__DEV__=true --sourcemap --bundle --outfile=../wwwroot/_framework/exprazor.server.js",
+    "build": "NODE_ENV=production || set NODE_ENV=production && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/_framework/exprazor.server.min.js"
   },
   "author": "WiZLite <black_rais0n.detre@icloud.com>",
   "license": "MIT",
@@ -14,8 +14,5 @@
     "esbuild": "^0.14.1",
     "glob": "^7.2.0",
     "ts-node": "^10.4.0"
-  },
-  "dependencies": {
-    "@microsoft/signalr": "^6.0.0"
   }
 }

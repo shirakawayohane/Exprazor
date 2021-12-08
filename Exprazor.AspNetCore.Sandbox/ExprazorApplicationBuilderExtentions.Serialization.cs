@@ -69,9 +69,9 @@ namespace Microsoft.AspNetCore.Builder
 
                         if (key == null) throw new InvalidDataException("Callback key cannot be null.");
 
+                        reader.Read();
                         if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException();
 
-                        reader.Read();
                         return new InvokeVoid(id, key);
                     default:
                         throw new InvalidDataException("Got unrecognized command.");

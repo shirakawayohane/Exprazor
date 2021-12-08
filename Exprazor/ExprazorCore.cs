@@ -307,12 +307,9 @@ internal static class ExprazorCore
                 while(oldChildren.Any())
                 {
                     var oldChild = oldChildren.First!.Value;
-                    if(oldChild.GetKey() == null)
-                    {
-                        commands.Add(new RemoveChild(nodeId, oldChild.NodeId));
-                        oldChild.Dispose();
-                        oldChildren.RemoveFirst();
-                    }
+                    commands.Add(new RemoveChild(nodeId, oldChild.NodeId));
+                    oldChild.Dispose();
+                    oldChildren.RemoveFirst();
                 }
             }
 
