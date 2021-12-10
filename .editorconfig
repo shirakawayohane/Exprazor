@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# IDE0023: オペレーターにブロック本体を使用する
+dotnet_diagnostic.IDE0023.severity = none

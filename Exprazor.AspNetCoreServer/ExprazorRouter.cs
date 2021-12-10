@@ -1,9 +1,6 @@
 ﻿using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.SignalR;
 
-namespace Exprazor.AspNetCore.Sandbox
+namespace Exprazor.AspNetCoreServer
 {
     public class ExprazorRouter
     {
@@ -18,7 +15,7 @@ namespace Exprazor.AspNetCore.Sandbox
                 if (unit.Pattern.IsMatch(path))
                 {
                     var groups = unit.Pattern.Match(path).Groups;
-                    return unit.Initializer(groups?.Cast<Group>().Skip(1).Select(x => x.Value).ToArray());
+                    return unit.Initializer(groups?.Cast<Group>().Skip(1).Select(x => x.Value).Where(x => !string.IsNullOrEmpty(x)).ToArray());
                 }
             }
 

@@ -9,13 +9,16 @@
 
         protected override IExprazorNode Render(CounterState state)
         {
-            return Elm("div", new() { ["id"] = "counter" }, new[]
-            {
+            return
+            Elm("div", new() { ["id"] = "counter" },
+                Elm("div", null,
+                    Text("Counter")
+                ),
                 Text(state.Value.ToString()),
-                Elm("button", new() { ["onclick"] = () => SetState(state with { Value = state.Value + 1 })},
+                Elm("button", new() { ["onclick"] = () => SetState(state with { Value = state.Value + 1 }) },
                     Text("+")
                 )
-            });
+            );
         }
     }
 }

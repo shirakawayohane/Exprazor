@@ -63,7 +63,8 @@
   console.log(idToElement);
   elementToId[idToElement[MOUNT_ID]] = MOUNT_ID;
   var location = window.location;
-  var hubUri = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${location.pathname}counter/123`;
+  console.log(location.pathname);
+  var hubUri = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${location.pathname}`;
   var socket = new WebSocket(hubUri);
   socket.addEventListener("open", (event) => {
     socket.send(JSON.stringify(["Hello"]));

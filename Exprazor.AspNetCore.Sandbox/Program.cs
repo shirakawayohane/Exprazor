@@ -8,7 +8,7 @@ using System.Net.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSignalRCore();
+builder.Logging.AddSimpleConsole();
 builder.Services.AddExprazor();
 
 var app = builder.Build();
@@ -22,11 +22,13 @@ if (!app.Environment.IsDevelopment())
 
 app.MapExprazor(router =>
 {
-    router.Route("/counter/(\\d+)", matches =>
+    router.Route("/counter/?(\\d+)?", matches =>
     {
+        if(matches == null || matches.Length == 0) return ExprazorApp.Create<Counter>(new CounterProps(0));
         return ExprazorApp.Create<Counter>(new CounterProps(int.Parse(matches![0])));
     });
 });
+
 app.UseExprazor();
 app.MapFallbackToFile("index.html");
 app.UseStaticFiles();

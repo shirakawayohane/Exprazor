@@ -11,7 +11,7 @@ namespace Microsoft.AspNetCore.Builder
     using ServerCommandType = System.Int32;
 #endif
 
-    public static partial class ExprazorApplicationBuilderExtentions
+    public static partial class ExprazorBuilderExtentions
     {
         public interface ServerCommand
         {

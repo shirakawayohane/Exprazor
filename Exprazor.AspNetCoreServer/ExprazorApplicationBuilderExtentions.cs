@@ -1,13 +1,16 @@
 ﻿using Exprazor;
-using Exprazor.AspNetCore.Sandbox;
+using Exprazor.AspNetCoreServer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text.Json;
 
 namespace Microsoft.AspNetCore.Builder
 {
+    internal class Exprazor { }
 
-    public static partial class ExprazorApplicationBuilderExtentions
+    public static partial class ExprazorBuilderExtentions
     {
         static JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
         {
@@ -70,7 +73,6 @@ namespace Microsoft.AspNetCore.Builder
                 WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 while (!result.CloseStatus.HasValue)
                 {
-                    Console.WriteLine("read data");
                     var slice = new ArraySegment<byte>(buffer, 0, result.Count);
                     var clientCommand = JsonSerializer.Deserialize<ClientCommand>(slice, jsonSerializerOptions);
 
@@ -85,7 +87,6 @@ namespace Microsoft.AspNetCore.Builder
 
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
-                Console.WriteLine("Connection closed : " + result.CloseStatus.Value);
                 app.CommandHandler -= commandHandler;
                 await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
             }
