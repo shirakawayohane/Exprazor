@@ -21,7 +21,6 @@ socket.addEventListener("open", event => {
 });
 
 socket.addEventListener("message", event => {
-    console.log("eventdata : ", event);
     const data = JSON.parse(event.data);
     if(isHandleCommands(data)) {
         data.Commands.forEach(cmd => {
@@ -58,13 +57,8 @@ socket.addEventListener("message", event => {
             } else if (isAppendChild(cmd)) {
                 idToElement.get(cmd.ParentId).appendChild(idToElement.get(cmd.NewId));
             } else if(isSetTextNodeValue(cmd)) {
-                (idToElement.get(cmd.Id) as Text).textContent = cmd.Text;
+                (idToElement.get(cmd.Id) as Text).data = cmd.Text;
             } else if(isInsertBefore(cmd)) {
-                // console.log(cmd);
-                console.log(idToElement);
-                console.log(cmd.ParentId);
-                console.log(idToElement.get(cmd.ParentId));
-                console.log(idToElement.has(cmd.ParentId));
                 idToElement.get(cmd.ParentId).insertBefore(idToElement.get(cmd.NewId), idToElement.get(cmd.BeforeId));
             } else if(isRemoveChild(cmd)) {
                 const childToRemove = idToElement.get(cmd.ChildId);

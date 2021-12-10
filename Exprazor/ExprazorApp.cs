@@ -54,11 +54,11 @@ namespace Exprazor
             commands.Clear();
         }
 
-        internal void AddCallback(Id nodeId, string key, object callback)
+        internal void AddOrSetCallback(Id nodeId, string key, object callback)
         {
             if(callbacks.TryGetValue(nodeId, out var callbacksOfNode))
             {
-                callbacksOfNode.Add(key, callback);
+                callbacksOfNode[key] = callback;
             } else
             {
                 callbacks.Add(nodeId, new Dictionary<string, object>()

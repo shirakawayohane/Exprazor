@@ -35,7 +35,7 @@ namespace Exprazor
         public Id NodeId { get; set; }
 
         public void Dispose() {/* Do nothing. */}
-        public object? GetKey() => Text;
+        public object? GetKey() => null;
     }
 
     internal class HTMLNode : IExprazorNode

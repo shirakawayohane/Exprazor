@@ -59,7 +59,7 @@ internal static class ExprazorCore
             }
             else if (newValue is Action newAct && Object.ReferenceEquals(newValue, oldValue) == false)
             {
-                context.AddCallback(nodeId, key, newAct);
+                context.AddOrSetCallback(nodeId, key, newAct);
                 commands.Add(new SetVoidCallback(nodeId, key));
             }
         }
@@ -96,6 +96,8 @@ internal static class ExprazorCore
     // Patchが長すぎるので、LINQを使ってでも短く書き直す
     static internal void Patch(ExprazorApp context, Id parentId, Id nodeId, IExprazorNode? oldVNode, IExprazorNode newVNode, in List<DOMCommand> commands)
     {
+        newVNode.NodeId = nodeId;
+
         if (oldVNode == newVNode) return;
 
         if (oldVNode == null || oldVNode.GetType() != newVNode.GetType())
@@ -220,7 +222,7 @@ internal static class ExprazorCore
                     var newChild = newChildren.First();
                     var oldKey = oldChild.GetKey();
                     var newKey = newChild.GetKey();
-                    var nextKey = oldChildren.First!.Next!.Value.GetKey();
+                    var nextKey = oldChildren.First?.Next?.Value?.GetKey();
 
                     // N is null. x and X are different.
 
@@ -313,7 +315,6 @@ internal static class ExprazorCore
                 }
             }
 
-            newVNode.NodeId = nodeId;
         }
     }
 }
