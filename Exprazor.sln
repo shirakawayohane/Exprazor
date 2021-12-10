@@ -3,23 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor", "Exprazor\Exprazor.csproj", "{98665EF7-E046-4FE0-AEF6-EF15E4751DD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor", "src\Exprazor\Exprazor.csproj", "{98665EF7-E046-4FE0-AEF6-EF15E4751DD7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{74885932-F423-40CE-9F7C-671BC198E968}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor.Tests", "Exprazor.Test\Exprazor.Tests.csproj", "{8F897DF8-C530-455C-B62E-53ABC4F9272E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor.Tests", "src\Exprazor.Test\Exprazor.Tests.csproj", "{8F897DF8-C530-455C-B62E-53ABC4F9272E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor.AspNetCore.Sandbox", "Exprazor.AspNetCore.Sandbox\Exprazor.AspNetCore.Sandbox.csproj", "{6AB99670-6F75-4392-BE4E-CD46C99EB653}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exprazor.AspNetCore.Sandbox", "src\Exprazor.AspNetCore.Sandbox\Exprazor.AspNetCore.Sandbox.csproj", "{6AB99670-6F75-4392-BE4E-CD46C99EB653}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{682E4BAC-FFD8-4D49-B7B3-5326BB09E408}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exprazor.AspNetCoreServer", "Exprazor.AspNetCoreServer\Exprazor.AspNetCoreServer.csproj", "{73B38B4C-E3D3-47F0-B6B9-D80689EAAE56}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exprazor.AspNetCoreServer", "src\Exprazor.AspNetCoreServer\Exprazor.AspNetCoreServer.csproj", "{73B38B4C-E3D3-47F0-B6B9-D80689EAAE56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

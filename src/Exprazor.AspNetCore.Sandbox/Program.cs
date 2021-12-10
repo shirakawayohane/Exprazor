@@ -27,6 +27,8 @@ app.MapExprazor(router =>
         if(matches == null || matches.Length == 0) return ExprazorApp.Create<Counter>(new CounterProps(0));
         return ExprazorApp.Create<Counter>(new CounterProps(int.Parse(matches![0])));
     });
+
+    router.Route(".*", _ => ExprazorApp.Create<NotFound>(new Unit()));
 });
 
 app.UseExprazor();

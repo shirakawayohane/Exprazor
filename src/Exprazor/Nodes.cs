@@ -122,20 +122,22 @@ namespace Exprazor
             }
         }
     }
-
-    public abstract class Component<TProps, TState> : Component where TProps : class where TState : class
+    public record struct Unit();
+    public abstract class Component<TProps, TState> : Component
     {
+        protected static Unit Unit = new();
+
         public Component() {}
 
         protected abstract TState PropsChanged(TProps props);
         protected abstract IExprazorNode Render(TState state);
 
-        protected internal override object PropsChanged(object props) => PropsChanged((props as TProps)!);
+        protected internal override object PropsChanged(object props) => PropsChanged((TProps)props)!;
 
-        protected internal override IExprazorNode Render(object state) => Render((state as TState)!)!;
+        protected internal override IExprazorNode Render(object state) => Render((TState)state)!;
 
-        protected IExprazorNode Elm<TComponent>(TProps props) where TComponent : Component<TProps, TState>, new() => base.Elm<TComponent>(props);
+        protected IExprazorNode Elm<TComponent>(TProps props) where TComponent : Component<TProps, TState>, new() => base.Elm<TComponent>(props!);
 
-        protected void SetState(TState newState) => base.SetState(newState);
+        protected void SetState(TState newState) => base.SetState(newState!);
     }
 }
