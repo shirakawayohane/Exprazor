@@ -5,199 +5,81 @@ declare var __DEV__ : any;
 export type Id = number;
 
 export type DOMCommand = 
-    SetNumberAttribute  |
+    SetStringAttribute  |
     SetNumberAttribute  |
     SetBooleanAttribute |
     RemoveAttribute     |
-    SetVoidCallback     |
-    RemoveCallback      |
+    SetTextNodeValue    |
     CreateTextNode      |
     CreateElement       |
     AppendChild         |
-    SetTextNodeValue    |
     InsertBefore        |
-    RemoveChild
+    RemoveChild         |
+    RemoveCallback      |
+    SetVoidCallback     |
+    SetStringCallback
     ;
 
-export type SetStringAttribute = {
-    Id: Id,
-    Key: string,
-    Value: string
+export type SetStringAttribute = [_ : 0, id : Id, key : string, value : string];
+export function isSetStringAttribute(value : any) : value is SetStringAttribute {
+    return value[0] === 0;
+}
+export type SetNumberAttribute = [_ : 1, id : Id, key : string, value : number];
+export function isSetNumberAttribute(value : any) : value is SetNumberAttribute {
+    return value[0] === 1;
 }
 
-export type SetNumberAttribute = {
-    Id: Id,
-    Key: string,
-    Value: number
+export type SetBooleanAttribute = [_ : 2, id : Id, key : string, value : boolean];
+export function isSetBooleanAttribute(value : any) : value is SetBooleanAttribute {
+    return value[0] === 2;
 }
 
-export type SetBooleanAttribute = {
-    Id:Id,
-    Key: string,
-    Value: boolean
+export type RemoveAttribute = [_ : 3, id : Id, key : string];
+export function isRemoveAttribute(value : any) : value is RemoveAttribute {
+    return value[0] === 3;
 }
 
-export type RemoveAttribute = {
-    Id: Id,
-    Key: string
+export type SetTextNodeValue = [_ : 4, id : Id, text : string];
+export function isSetTextNodeValue(value : any) : value is SetTextNodeValue {
+    return value[0] === 4;
 }
 
-export type SetVoidCallback = {
-    Id: Id,
-    Key: string,
+export type CreateTextNode = [_ : 10, id : Id, text : string];
+export function isCreateTextNode(value : any) : value is CreateTextNode {
+    return value[0] === 10;
 }
 
-export type RemoveCallback = {
-    Id: Id,
-    Key: string,
+export type CreateElement = [_ : 11, id : Id, tag : string];
+export function isCreateElement(value : any) : value is CreateElement {
+    return value[0] === 11;
 }
 
-export type CreateTextNode = {
-    Id: Id,
-    Text: string
+export type AppendChild = [_  : 20, parentId : Id, newId : Id];
+export function isAppendChild(value : any) : value is AppendChild {
+    return value[0] === 20;
 }
 
-export type CreateElement = {
-    Id: Id,
-    Tag: string
+export type InsertBefore = [_ : 21, parentId: Id, newId: Id, beforeId: Id];
+export function isInsertBefore(value : any) : value is InsertBefore {
+    return value[0] === 21;
 }
 
-export type AppendChild = {
-    ParentId: Id,
-    NewId: Id,
+export type RemoveChild = [_ : 22, parentId: Id, childId : Id];
+export function isRemoveChild(value : any) : value is RemoveChild {
+    return value[0] === 22;
 }
 
-export type SetTextNodeValue = {
-    Id: Id,
-    Text: string
+export type RemoveCallback = [_ : 30, id : Id, key : string];
+export function isRemoveCallback(value : any) : value is RemoveCallback {
+    return value[0] === 30;
 }
 
-export type InsertBefore = {
-    ParentId: Id,
-    NewId: Id,
-    BeforeId: Id
+export type SetVoidCallback = [_ : 31, id : Id, key : string];
+export function isSetVoidCallback(value : any) : value is SetVoidCallback {
+    return value[0] === 31;
 }
 
-export type RemoveChild = {
-    ParentId: Id,
-    ChildId: Id
+export type SetStringCallback = [_ : 32, id : Id, key : string];
+export function isSetStringCallback(value : any) : value is SetStringCallback {
+    return value[0] === 32;
 }
-
-function isDOMCommandCore(value: any, type_dev: string, type_prod: number) {
-    if(window["EXPRAZOR_DEV"]) {
-        return value.Type == type_dev;
-    }
-
-    return value.Type == type_prod;
-}
-
-function isSetStringAttributeProd(value: any) : value is SetStringAttribute {
-    return value.Type === 1;
-}
-function isSetStringAttributeDev(value:any) : value is SetStringAttribute {
-    return value.Type === "SetStringAttribute"
-}
-export const isSetStringAttribute : (value:any) => value is SetStringAttribute = (__DEV__ ? isSetStringAttributeDev : isSetStringAttributeProd);
-
-function isSetNumberAttributeProd(value: any) : value is SetNumberAttribute {
-    return value.Type === 2;
-}
-function isSetNumberAttributeDev(value:any) : value is SetNumberAttribute {
-    return value.Type === "SetNumberAttribute"
-}
-export const isSetNumberAttribute : (value:any) => value is SetNumberAttribute = (__DEV__ ? isSetNumberAttributeDev : isSetNumberAttributeProd);
-
-
-function isSetBooleanAttributeProd(value: any) : value is SetBooleanAttribute {
-    return value.Type === 3;
-}
-function isSetBooleanAttributeDev(value:any) : value is SetBooleanAttribute {
-    return value.Type === "SetBooleanAttribute"
-}
-export const isSetBooleanAttribute : (value:any) => value is SetBooleanAttribute = (__DEV__ ? isSetBooleanAttributeDev : isSetBooleanAttributeProd);
-
-
-function isRemoveAttributeProd(value: any) : value is RemoveAttribute {
-    return value.Type === 4;
-}
-function isRemoveAttributeDev(value:any) : value is RemoveAttribute {
-    return value.Type === "RemoveAttribute"
-}
-export const isRemoveAttribute : (value:any) => value is RemoveAttribute = (__DEV__ ? isRemoveAttributeDev : isRemoveAttributeProd);
-
-
-
-function isSetVoidCallbackProd(value: any) : value is SetVoidCallback {
-    return value.Type === 5;
-}
-function isSetVoidCallbackDev(value:any) : value is SetVoidCallback {
-    return value.Type === "SetVoidCallback"
-}
-export const isSetVoidCallback : (value:any) => value is SetVoidCallback = (__DEV__ ? isSetVoidCallbackDev : isSetVoidCallbackProd);
-
-
-
-function isRemoveCallbackProd(value: any) : value is RemoveCallback {
-    return value.Type === 6;
-}
-function isRemoveCallbackDev(value:any) : value is RemoveCallback {
-    return value.Type === "RemoveCallback"
-}
-export const isRemoveCallback : (value:any) => value is RemoveCallback = (__DEV__ ? isRemoveCallbackDev : isRemoveCallbackProd);
-
-
-
-function isCreateTextNodeProd(value: any) : value is CreateTextNode {
-    return value.Type === 7;
-}
-function isCreateTextNodeDev(value:any) : value is CreateTextNode {
-    return value.Type === "CreateTextNode"
-}
-export const isCreateTextNode : (value:any) => value is CreateTextNode = (__DEV__ ? isCreateTextNodeDev : isCreateTextNodeProd);
-
-
-
-function isCreateElementProd(value: any) : value is CreateElement {
-    return value.Type === 8;
-}
-function isCreateElementDev(value:any) : value is CreateElement {
-    return value.Type === "CreateElement"
-}
-export const isCreateElement : (value:any) => value is CreateElement = (__DEV__ ? isCreateElementDev : isCreateElementProd);
-
-
-function isAppendChildProd(value: any) : value is AppendChild {
-    return value.Type === 9;
-}
-function isAppendChildDev(value:any) : value is AppendChild {
-    return value.Type === "AppendChild"
-}
-export const isAppendChild : (value:any) => value is AppendChild = (__DEV__ ? isAppendChildDev : isAppendChildProd);
-
-
-
-function isSetTextNodeValueProd(value: any) : value is SetTextNodeValue {
-    return value.Type === 10;
-}
-function isSetTextNodeValueDev(value:any) : value is SetTextNodeValue {
-    return value.Type === "SetTextNodeValue"
-}
-export const isSetTextNodeValue : (value:any) => value is SetTextNodeValue = (__DEV__ ? isSetTextNodeValueDev : isSetTextNodeValueProd);
-
-
-function isInsertBeforeProd(value: any) : value is InsertBefore {
-    return value.Type === 11;
-}
-function isInsertBeforeDev(value:any) : value is InsertBefore {
-    return value.Type === "InsertBefore"
-}
-export const isInsertBefore : (value:any) => value is InsertBefore = (__DEV__ ? isInsertBeforeDev : isInsertBeforeProd);
-
-
-function isRemoveChildProd(value: any) : value is RemoveChild {
-    return value.Type === 12;
-}
-function isRemoveChildDev(value:any) : value is RemoveChild {
-    return value.Type === "RemoveChild"
-}
-export const isRemoveChild : (value:any) => value is RemoveChild = (__DEV__ ? isRemoveChildDev : isRemoveChildProd);

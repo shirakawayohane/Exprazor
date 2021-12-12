@@ -3,119 +3,141 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MessagePack;
+using MessagePack.Formatters;
 
 namespace Exprazor
 {
-    using Id = System.Int64;
-#if DEBUG
-    using CommandType = System.String;
-#else
-    using CommandType = System.UInt32;
-#endif
+    using Id = System.UInt64;
+    [MessagePackFormatter(typeof(DOMCommandFormatter))]
+    public interface DOMCommand {}
 
-    public interface DOMCommand
+    public record struct SetStringAttribute(Id Id, string Key, string Value) : DOMCommand;
+    public record struct SetNumberAttribute(Id Id, string Key, double Value) : DOMCommand;
+    public record struct SetBooleanAttribute(Id Id, string Key, bool Value) : DOMCommand;
+    public record struct SetTextNodeValue(Id Id, string Text) : DOMCommand;
+    public record struct RemoveAttribute(Id Id, string Key) : DOMCommand;
+    public record struct CreateTextNode(Id Id, string Text) : DOMCommand;
+    public record struct CreateElement(Id Id, string Tag) : DOMCommand;
+    public record struct AppendChild(Id ParentId, Id NewId) : DOMCommand;
+    public record struct InsertBefore(Id ParentId, Id NewId, Id BeforeId) : DOMCommand;
+    public record struct RemoveChild(Id ParentId, Id ChildId) : DOMCommand;
+    public record struct RemoveCallback(Id Id, string Key) : DOMCommand;
+    public record struct SetVoidCallback(Id Id, string Key) : DOMCommand;
+    public record struct SetStringCallback(Id Id, string Key) : DOMCommand;
+
+    public class DOMCommandFormatter : IMessagePackFormatter<DOMCommand>
     {
-        /// <summary>
-        /// Treat Type as string at least until this starts working.
-        /// </summary>
-        /// CommandType Type { get; }
+        public DOMCommand Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
+        {
+            reader.ReadArrayHeader();
+            return reader.ReadByte() switch
+            {
+                0 => new SetStringAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadString()),
+                1 => new SetNumberAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadDouble()),
+                2 => new SetBooleanAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadBoolean()),
+                3 => new RemoveAttribute(reader.ReadUInt32(), reader.ReadString()),
+                4 => new SetTextNodeValue(reader.ReadUInt32(), reader.ReadString()),
+                10 => new CreateTextNode(reader.ReadUInt32(), reader.ReadString()),
+                11 => new CreateElement(reader.ReadUInt32(), reader.ReadString()),
+                20 => new AppendChild(reader.ReadUInt32(), reader.ReadUInt32()),
+                21 => new InsertBefore(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32()),
+                22 => new RemoveChild(reader.ReadUInt32(), reader.ReadUInt32()),
+                30 => new RemoveCallback(reader.ReadUInt32(), reader.ReadString()),
+                31 => new SetVoidCallback(reader.ReadUInt32(), reader.ReadString()),
+                32 => new SetStringCallback(reader.ReadUInt32(), reader.ReadString()),
+                _ => throw new InvalidDataException(),
+            };
+        }
+
+        public void Serialize(ref MessagePackWriter writer, DOMCommand value, MessagePackSerializerOptions options)
+        {
+            switch (value)
+            {
+                case SetStringAttribute ssa:
+                    writer.WriteArrayHeader(4);
+                    writer.WriteUInt8(0);
+                    writer.Write(ssa.Id);
+                    writer.Write(ssa.Key);
+                    writer.Write(ssa.Value);
+                    break;
+                case SetNumberAttribute sna:
+                    writer.WriteArrayHeader(4);
+                    writer.WriteUInt8(1);
+                    writer.Write(sna.Id);
+                    writer.Write(sna.Key);
+                    writer.Write(sna.Value);
+                    break;
+                case SetBooleanAttribute sba:
+                    writer.WriteArrayHeader(4);
+                    writer.WriteUInt8(2);
+                    writer.Write(sba.Id);
+                    writer.Write(sba.Key);
+                    writer.Write(sba.Value);
+                    break;
+                case RemoveAttribute ra:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(3);
+                    writer.Write(ra.Id);
+                    writer.Write(ra.Key);
+                    break;
+                case SetTextNodeValue stn:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(4);
+                    writer.Write(stn.Id);
+                    writer.Write(stn.Text);
+                    break;
+                case CreateTextNode ct:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(10);
+                    writer.Write(ct.Id);
+                    writer.Write(ct.Text);
+                    break;
+                case CreateElement ce:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(11);
+                    writer.Write(ce.Id);
+                    writer.Write(ce.Tag);
+                    break;
+                case AppendChild ac:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(20);
+                    writer.Write(ac.ParentId);
+                    writer.Write(ac.NewId);
+                    break;
+                case InsertBefore ib:
+                    writer.WriteArrayHeader(4);
+                    writer.WriteUInt8(21);
+                    writer.Write(ib.ParentId);
+                    writer.Write(ib.NewId);
+                    writer.Write(ib.BeforeId);
+                    break;
+                case RemoveChild rc:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(22);
+                    writer.Write(rc.ParentId);
+                    writer.Write(rc.ChildId);
+                    break;
+                case RemoveCallback rmc:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(30);
+                    writer.Write(rmc.Id);
+                    writer.Write(rmc.Key);
+                    break;
+                case SetVoidCallback svc:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(31);
+                    writer.Write(svc.Id);
+                    writer.Write(svc.Key);
+                    break;
+                case SetStringCallback ssc:
+                    writer.WriteArrayHeader(3);
+                    writer.WriteUInt8(32);
+                    writer.Write(ssc.Id);
+                    writer.Write(ssc.Key);
+                    break;
+            }
+        }
     }
 
-    public record struct SetStringAttribute(Id Id, string Key, string Value) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(SetStringAttribute);
-#else
-            public CommandType Type => 1;
-#endif
-    }
-    public record struct SetNumberAttribute(Id Id, string Key, decimal Value) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(SetNumberAttribute);
-#else
-            public CommandType Type => 2;
-#endif
-    }
-    public record struct SetBooleanAttribute(Id Id, string Key, bool Value) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(SetBooleanAttribute);
-#else
-            public CommandType Type => 3;
-#endif
-    }
-    public record struct RemoveAttribute(Id Id, string Key) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(RemoveAttribute);
-#else
-            public CommandType Type => 4;
-#endif
-    }
-
-    public record struct SetVoidCallback(Id Id, string Key) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(SetVoidCallback);
-#else
-            public CommandType Type => 5;
-#endif
-    }
-    public record struct RemoveCallback(Id Id, string Key) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(RemoveCallback);
-#else
-            public CommandType Type => 6;
-#endif
-    }
-    public record struct CreateTextNode(Id Id, string Text) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(CreateTextNode);
-#else
-            public CommandType Type => 7;
-#endif
-    }
-    public record struct CreateElement(Id Id, string Tag) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(CreateElement);
-#else
-            public CommandType Type => 8;
-#endif
-    }
-    public record struct AppendChild(Id ParentId, Id NewId) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(AppendChild);
-#else
-            public CommandType Type => 9;
-#endif
-    }
-    public record struct SetTextNodeValue(Id Id, string Text) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(SetTextNodeValue);
-#else
-            public CommandType Type => 10;
-#endif
-    }
-    public record struct InsertBefore(Id ParentId, Id NewId, Id BeforeId) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(InsertBefore);
-#else
-            public CommandType Type => 11;
-#endif
-    }
-    public record struct RemoveChild(Id ParentId, Id ChildId) : DOMCommand
-    {
-#if DEBUG
-        public CommandType Type => nameof(RemoveChild);
-#else
-            public CommandType Type => 12;
-#endif
-    }
 }

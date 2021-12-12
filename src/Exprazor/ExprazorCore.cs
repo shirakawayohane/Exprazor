@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Exprazor;
 using Attributes = Dictionary<string, object>;
-using Id = System.Int64;
+using Id = System.UInt64;
 
 internal static class ExprazorCore
 {
@@ -73,7 +73,7 @@ internal static class ExprazorCore
             {
                 if (newValue is byte or sbyte or short or ushort or int or long or ulong or ulong or float or double or decimal)
                 {
-                    commands.Add(new SetNumberAttribute(nodeId, key, (decimal)newValue));
+                    commands.Add(new SetNumberAttribute(nodeId, key, (double)newValue));
                 }
                 else if (newValue is string str)
                 {

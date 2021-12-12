@@ -1,4 +1,4 @@
-<!-- Work-around to include wwwroot folder. -->
+﻿<!-- Work-around to include wwwroot folder. -->
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\_framework\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

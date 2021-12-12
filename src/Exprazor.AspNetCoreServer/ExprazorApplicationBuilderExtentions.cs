@@ -1,5 +1,6 @@
 ﻿using Exprazor;
 using Exprazor.AspNetCoreServer;
+using MessagePack;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -12,15 +13,6 @@ namespace Microsoft.AspNetCore.Builder
 
     public static partial class ExprazorBuilderExtentions
     {
-        static JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
-        {
-            Converters =
-            {
-                new ClientCommandDeserializer(),
-                new ServerCommandSerializer(),
-            }
-        };
-
         public static void MapExprazor(this IApplicationBuilder app, Action<ExprazorRouter> router)
         {
             var expRouter = app.ApplicationServices.GetRequiredService<ExprazorRouter>();
@@ -63,8 +55,12 @@ namespace Microsoft.AspNetCore.Builder
                 Func<IEnumerable<DOMCommand>,Task> commandHandler = async (commands) =>
                 {
                     using (var memory = new MemoryStream()) {
-                        JsonSerializer.Serialize<ServerCommand>(memory, new HandleCommands(commands), jsonSerializerOptions);
-                        await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Text, true, CancellationToken.None);
+#if DEBUG
+                        Console.WriteLine(MessagePackSerializer.ConvertToJson(MessagePackSerializer.Serialize<FromServerCommand>(new HandleCommands(commands))));
+#endif
+                        await MessagePackSerializer.SerializeAsync<FromServerCommand>(memory, new HandleCommands(commands));
+                        var deserialized = MessagePackSerializer.Deserialize<object>(memory.ToArray());
+                        await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
                     }
                 };
 
@@ -74,7 +70,7 @@ namespace Microsoft.AspNetCore.Builder
                 while (!result.CloseStatus.HasValue)
                 {
                     var slice = new ArraySegment<byte>(buffer, 0, result.Count);
-                    var clientCommand = JsonSerializer.Deserialize<ClientCommand>(slice, jsonSerializerOptions);
+                    var clientCommand = MessagePackSerializer.Deserialize<FromClientCommand>(slice);
 
                     if (clientCommand is Connected connected)
                     {

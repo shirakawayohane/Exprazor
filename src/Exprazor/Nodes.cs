@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Exprazor
 {
     using Attributes = Dictionary<string, object>;
-    using Id = System.Int64;
+    using Id = System.UInt64;
     using static ExprazorCore;
 
     public interface IExprazorNode : IDisposable

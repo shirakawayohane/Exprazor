@@ -1,114 +1,76 @@
 ﻿using Exprazor;
+using MessagePack;
+using MessagePack.Formatters;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.AspNetCore.Builder
 {
-    using Id = System.Int64;
-#if DEBUG
-    using ServerCommandType = System.String;
-#else
-    using ServerCommandType = System.Int32;
-#endif
+    using Id = System.UInt64;
 
     public static partial class ExprazorBuilderExtentions
     {
-        public interface ServerCommand
-        {
-            ServerCommandType Type { get; }
-        };
-        record struct HandleCommands(IEnumerable<DOMCommand> Commands) : ServerCommand
-        {
-#if DEBUG
-            public ServerCommandType Type => nameof(HandleCommands);
-#else
-            public ServerCommandType Type => 0;
-#endif
-        }
+        [MessagePackFormatter(typeof(FromServerCommandFormatter))]
+        interface FromServerCommand { }
+        record struct HandleCommands(IEnumerable<DOMCommand> Commands) : FromServerCommand; // 0
 
-        record struct SetAsDevelopment() : ServerCommand
+        [MessagePackFormatter(typeof(FromClientCommandFormatter))]
+        interface FromClientCommand { }
+        record struct Connected() : FromClientCommand { } // 0
+        record struct InvokeVoid(Id Id, string Key) : FromClientCommand { } // 1
+        record struct InvokeWithString(Id Id, string Key, string arg) : FromClientCommand { } // 2
+
+        class FromServerCommandFormatter : IMessagePackFormatter<FromServerCommand>
         {
-#if DEBUG
-            public ServerCommandType Type => nameof(SetAsDevelopment);
-#else
-            public ServerCommandType Type => 1;
-#endif
-        }
-
-        public interface ClientCommand { }
-
-        record struct Connected() : ClientCommand { } // "Hello"
-        record struct InvokeVoid(Id Id, string Key) : ClientCommand { } // 1
-
-        class ClientCommandDeserializer : JsonConverter<ClientCommand>
-        {
-            // Debug: ["invokeVoid", 1, "onclick"]
-            // Prod: [0, 1, "onclick"]
-            public override ClientCommand? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
+            public FromServerCommand Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
             {
-                if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException();
-                reader.Read();
-#if DEBUG
-                var type = reader.GetString();
-#else
-                var type = reader.GetInt32();
-#endif
-                reader.Read();
-                switch (type)
+                throw new NotSupportedException("Deserializing FromServerCommand is not supported for now.");
+            }
+
+            public void Serialize(ref MessagePackWriter writer, FromServerCommand value, MessagePackSerializerOptions options)
+            {
+                switch(value)
                 {
-                    case "Hello":
-                        return new Connected();
-#if DEBUG
-                    case nameof(InvokeVoid):
-#else
-                    case 1:
-#endif
-                        var id = reader.GetInt64();
-                        reader.Read();
-                        string? key = reader.GetString()!;
-
-                        if (key == null) throw new InvalidDataException("Callback key cannot be null.");
-
-                        reader.Read();
-                        if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException();
-
-                        return new InvokeVoid(id, key);
-                    default:
-                        throw new InvalidDataException("Got unrecognized command.");
+                    case HandleCommands hc:
+                        writer.WriteArrayHeader(2);
+                        writer.WriteUInt8(0);
+                        MessagePackSerializer.Serialize(ref writer, hc.Commands.ToArray(), options);
+                        //MessagePackSerializer.Serialize(ref writer, new
+                        //{
+                        //    compact = true,
+                        //    scheema = 0
+                        //});
+                        //var commands = hc.Commands.ToArray();
+                        //writer.WriteArrayHeader(commands.Length);
+                        //foreach(var command in commands)
+                        //{
+                        //    MessagePackSerializer.Serialize(ref writer, command, options);
+                        //}
+                        break;
                 }
-
-            }
-
-            public override void Write(Utf8JsonWriter writer, ClientCommand value, JsonSerializerOptions options)
-            {
-                throw new NotSupportedException("ClientCommand is not intended to be serialized on server for now.");
             }
         }
 
-        class ServerCommandSerializer : JsonConverter<ServerCommand>
+        class FromClientCommandFormatter : IMessagePackFormatter<FromClientCommand>
         {
-            public override ServerCommand? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            public FromClientCommand Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
             {
-                throw new NotSupportedException("ServerCommand is not intended to be deserialized on server for now.");
+                reader.ReadArrayHeader();
+                var type = reader.ReadInt32();
+                return type switch
+                {
+                    0 => new Connected(),
+                    1 => new InvokeVoid(reader.ReadUInt32(), reader.ReadString()),
+                    2 => new InvokeWithString(reader.ReadUInt32(), reader.ReadString(), reader.ReadString()),
+                    _ => throw new InvalidDataException()
+                };
             }
 
-            public override void Write(Utf8JsonWriter writer, ServerCommand value, JsonSerializerOptions options)
+            public void Serialize(ref MessagePackWriter writer, FromClientCommand value, MessagePackSerializerOptions options)
             {
-                writer.WriteStartObject();
-                if(value is HandleCommands handleCommands)
-                {
-#if DEBUG
-                    writer.WriteString(nameof(ServerCommand.Type), handleCommands.Type);
-#else
-                    writer.WriteNumber(nameof(ServerCommand.Type), handleCommands.Type);
-#endif
-                    writer.WritePropertyName(nameof(HandleCommands.Commands));
-                    JsonSerializer.Serialize<IEnumerable<object>>(writer, handleCommands.Commands.Cast<object>(), options);
-                }
-                writer.WriteEndObject();
+                throw new NotSupportedException("Serializing FromServerCommand is not supported for now.");
             }
         }
 
     }
-
 }

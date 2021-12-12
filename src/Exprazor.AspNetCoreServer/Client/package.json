@@ -4,7 +4,7 @@
   "description": "Exprazor js client",
   "main": "index.ts",
   "scripts": {
-    "dev": "esbuild ./src/index.ts --watch --define:__DEV__=true --sourcemap --bundle --outfile=../wwwroot/_framework/exprazor.server.js",
+    "dev": "esbuild ./src/index.ts --watch --define:__DEV__=true --bundle --outfile=../wwwroot/exprazor.server.js",
     "build": "NODE_ENV=production || set NODE_ENV=production && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/_framework/exprazor.server.min.js"
   },
   "author": "WiZLite <black_rais0n.detre@icloud.com>",
@@ -13,5 +13,9 @@
     "esbuild": "^0.14.1",
     "glob": "^7.2.0",
     "ts-node": "^10.4.0"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^2.7.1",
+    "msgpack-lite": "^0.1.26"
   }
 }

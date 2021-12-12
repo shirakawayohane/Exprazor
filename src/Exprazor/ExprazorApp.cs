@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 namespace Exprazor
 {
     using Attributes = Dictionary<string, object>;
-    using Id = System.Int64;
+    using Id = System.UInt64;
     public class ExprazorApp
     {
-        public const Id MOUNT_ID = -1;
+        public const Id MOUNT_ID = 0;
         Id _id = MOUNT_ID;
         internal Id NextId() => ++_id;
 
