@@ -83,3 +83,59 @@ export type SetStringCallback = [_ : 32, id : Id, key : string];
 export function isSetStringCallback(value : any) : value is SetStringCallback {
     return value[0] === 32;
 }
+
+export function getKeyedObject(cmd : DOMCommand) : object {
+    if(isSetStringAttribute(cmd)) {
+        return {
+            name : "SetStringAttribute", id : cmd[1], key : cmd[2], value : cmd[3]
+        };
+    } else if(isSetNumberAttribute(cmd)) {
+        return {
+            name : "SetNumberAttribute", id : cmd[1], key : cmd[2], value : cmd[3]
+        };
+    } else if(isSetBooleanAttribute(cmd)) {
+        return {
+            name : "SetBooleanAttribute", id : cmd[1], key : cmd[2], value : cmd[3]
+        };
+    } else if(isRemoveAttribute(cmd)) {
+        return {
+            name : "RemoveAttribute", id : cmd[1], key : cmd[2]
+        };
+    } else if(isSetTextNodeValue(cmd)) {
+        return {
+            name : "SetTextNodeValue", id : cmd[1], text : cmd[2]
+        }
+    } else if(isCreateTextNode(cmd)) {
+        return {
+            name : "CreateTextNode", id : cmd[1], text : cmd[2]
+        }
+    } else if(isCreateElement(cmd)) {
+        return {
+            name : "CreateElement", id : cmd[1], tag : cmd[2]
+        }
+    } else if(isAppendChild(cmd)) {
+        return {
+            name : "AppendChild", parentId : cmd[1], newId : cmd[2]
+        }
+    } else if(isInsertBefore(cmd)) {
+        return {
+            name : "InsertBefore", parentId: cmd[1], newId : cmd[2], beforeId : cmd[3]
+        }
+    } else if(isRemoveChild(cmd)) {
+        return {
+            name : "RemoveChild" , parentId : cmd[1], childId : cmd[2]
+        }
+    } else if(isRemoveCallback(cmd)) {
+        return {
+            name : "RemoveCallback", id : cmd[1], key : cmd[2]
+        }
+    } else if(isSetVoidCallback(cmd)) {
+        return {
+            name : "SetVoidCallback", id : cmd[1], key : cmd[2]
+        }
+    } else if(isSetStringCallback(cmd)) {
+        return {
+            name : "SetStringCallback", id : cmd[1], key : cmd[2]
+        }
+    }
+}

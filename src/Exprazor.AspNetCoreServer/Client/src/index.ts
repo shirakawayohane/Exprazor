@@ -1,5 +1,5 @@
 import { isHandleCommands } from "./FromServerCommand";
-import { DOMCommand, Id, isAppendChild, isCreateElement, isCreateTextNode, isInsertBefore, isRemoveAttribute, isRemoveCallback, isRemoveChild, isSetBooleanAttribute, isSetNumberAttribute, isSetStringAttribute, isSetTextNodeValue, isSetVoidCallback } from "./DOMCommands";
+import { DOMCommand, getKeyedObject, Id, isAppendChild, isCreateElement, isCreateTextNode, isInsertBefore, isRemoveAttribute, isRemoveCallback, isRemoveChild, isSetBooleanAttribute, isSetNumberAttribute, isSetStringAttribute, isSetTextNodeValue, isSetVoidCallback, toString } from "./DOMCommands";
 import * as msgpack from "@msgpack/msgpack";
 declare var __DEV__ : any;
 
@@ -9,8 +9,8 @@ const elementToId : Map<Node, Id> = new Map();
 const MOUNT_ID = 0;
 const rootNode = document.querySelector("#root");
 if(rootNode) {
-idToElement.set(0, rootNode);
-elementToId[idToElement[MOUNT_ID]] = MOUNT_ID;
+idToElement.set(MOUNT_ID, rootNode);
+elementToId.set(rootNode, MOUNT_ID);
 
 const location = window.location;
 let hubUri = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${location.pathname}`;
@@ -22,12 +22,11 @@ socket.addEventListener("open", event => {
 });
 
 socket.addEventListener("message", event => {
-    console.log("データが来た。", event.data);
     event.data.arrayBuffer().then(buffer => {
         const data = msgpack.decode(buffer);
-        console.log(data);
         if(isHandleCommands(data)) {
             data[1].forEach(cmd => {
+                __DEV__ && console.log(getKeyedObject(cmd));
                 if (isSetStringAttribute(cmd)) {
                     (idToElement.get(cmd[1]) as HTMLElement).setAttribute(cmd[2], cmd[3]);
                 } else if (isSetNumberAttribute(cmd)) {

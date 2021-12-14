@@ -41,6 +41,94 @@
   function isSetVoidCallback(value) {
     return value[0] === 31;
   }
+  function isSetStringCallback(value) {
+    return value[0] === 32;
+  }
+  function getKeyedObject(cmd) {
+    if (isSetStringAttribute(cmd)) {
+      return {
+        name: "SetStringAttribute",
+        id: cmd[1],
+        key: cmd[2],
+        value: cmd[3]
+      };
+    } else if (isSetNumberAttribute(cmd)) {
+      return {
+        name: "SetNumberAttribute",
+        id: cmd[1],
+        key: cmd[2],
+        value: cmd[3]
+      };
+    } else if (isSetBooleanAttribute(cmd)) {
+      return {
+        name: "SetBooleanAttribute",
+        id: cmd[1],
+        key: cmd[2],
+        value: cmd[3]
+      };
+    } else if (isRemoveAttribute(cmd)) {
+      return {
+        name: "RemoveAttribute",
+        id: cmd[1],
+        key: cmd[2]
+      };
+    } else if (isSetTextNodeValue(cmd)) {
+      return {
+        name: "SetTextNodeValue",
+        id: cmd[1],
+        text: cmd[2]
+      };
+    } else if (isCreateTextNode(cmd)) {
+      return {
+        name: "CreateTextNode",
+        id: cmd[1],
+        text: cmd[2]
+      };
+    } else if (isCreateElement(cmd)) {
+      return {
+        name: "CreateElement",
+        id: cmd[1],
+        tag: cmd[2]
+      };
+    } else if (isAppendChild(cmd)) {
+      return {
+        name: "AppendChild",
+        parentId: cmd[1],
+        newId: cmd[2]
+      };
+    } else if (isInsertBefore(cmd)) {
+      return {
+        name: "InsertBefore",
+        parentId: cmd[1],
+        newId: cmd[2],
+        beforeId: cmd[3]
+      };
+    } else if (isRemoveChild(cmd)) {
+      return {
+        name: "RemoveChild",
+        parentId: cmd[1],
+        childId: cmd[2]
+      };
+    } else if (isRemoveCallback(cmd)) {
+      return {
+        name: "RemoveCallback",
+        id: cmd[1],
+        key: cmd[2]
+      };
+    } else if (isSetVoidCallback(cmd)) {
+      return {
+        name: "SetVoidCallback",
+        id: cmd[1],
+        key: cmd[2]
+      };
+    } else if (isSetStringCallback(cmd)) {
+      return {
+        name: "SetStringCallback",
+        id: cmd[1],
+        key: cmd[2]
+      };
+    }
+  }
 
   // node_modules/@msgpack/msgpack/dist.es5+esm/utils/int.mjs
   var UINT32_MAX = 4294967295;
@@ -1600,8 +1688,8 @@
   var MOUNT_ID = 0;
   var rootNode = document.querySelector("#root");
   if (rootNode) {
-    idToElement.set(0, rootNode);
-    elementToId[idToElement[MOUNT_ID]] = MOUNT_ID;
+    idToElement.set(MOUNT_ID, rootNode);
+    elementToId.set(rootNode, MOUNT_ID);
     const location = window.location;
     let hubUri = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${location.pathname}`;
     const socket = new WebSocket(hubUri);
@@ -1610,12 +1698,11 @@
       socket.send(encode([0]));
     });
     socket.addEventListener("message", (event) => {
-      console.log("\u30C7\u30FC\u30BF\u304C\u6765\u305F\u3002", event.data);
       event.data.arrayBuffer().then((buffer) => {
         const data = decode(buffer);
-        console.log(data);
         if (isHandleCommands(data)) {
           data[1].forEach((cmd) => {
+            console.log(getKeyedObject(cmd));
             if (isSetStringAttribute(cmd)) {
               idToElement.get(cmd[1]).setAttribute(cmd[2], cmd[3]);
             } else if (isSetNumberAttribute(cmd)) {
