@@ -1,5 +1,5 @@
 import { isHandleCommands } from "./FromServerCommand";
-import { DOMCommand, getKeyedObject, Id, isAppendChild, isCreateElement, isCreateTextNode, isInsertBefore, isRemoveAttribute, isRemoveCallback, isRemoveChild, isSetBooleanAttribute, isSetNumberAttribute, isSetStringAttribute, isSetTextNodeValue, isSetVoidCallback, toString } from "./DOMCommands";
+import { DOMCommand, getKeyedObject, Id, isAppendChild, isCreateElement, isCreateTextNode, isInsertBefore, isRemoveAttribute, isRemoveCallback, isRemoveChild, isSetBooleanAttribute, isSetNumberAttribute, isSetStringAttribute, isSetStringCallback, isSetTextNodeValue, isSetVoidCallback, toString } from "./DOMCommands";
 import * as msgpack from "@msgpack/msgpack";
 declare var __DEV__ : any;
 
@@ -25,8 +25,7 @@ if(rootNode) {
             const data = msgpack.decode(buffer);
             if(isHandleCommands(data)) {
                 data[1].forEach(cmd => {
-                    __DEV__ && console.log(getKeyedObject(cmd));
-                    __DEV__ && console.log(idToElement);
+                    if(__TRACE__ != undefined) console.log(getKeyedObject(cmd));
                     if (isSetStringAttribute(cmd)) {
                         (idToElement.get(cmd[1]) as HTMLElement).setAttribute(cmd[2], cmd[3]);
                     } else if (isSetNumberAttribute(cmd)) {
@@ -41,6 +40,8 @@ if(rootNode) {
                         (idToElement.get(cmd[1]) as HTMLElement).removeAttribute(cmd[2]);
                     } else if (isSetVoidCallback(cmd)) {
                         idToElement.get(cmd[1])[cmd[2]] = () => socket.send(msgpack.encode([1, cmd[1], cmd[2]]));
+                    } else if(isSetStringCallback(cmd)) {
+                        idToElement.get(cmd[1])[cmd[2]] = e => socket.send(msgpack.encode([2, cmd[1], cmd[2], e.currentTarget.value]));
                     } else if (isRemoveCallback(cmd)) {
                         idToElement.get(cmd[1])[cmd[2]] = null;
                     } else if (isCreateTextNode(cmd)) {

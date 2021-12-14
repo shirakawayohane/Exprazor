@@ -28,11 +28,16 @@ app.MapExprazor(router =>
         return ExprazorApp.Create<Counter>(new CounterProps(int.Parse(matches![0])));
     });
 
+    router.Route("/input/?", _ =>
+    {
+        return ExprazorApp.Create<Input>(new Unit());
+    });
+
     router.Route(".*", _ => ExprazorApp.Create<NotFound>(new Unit()));
 });
-
 app.UseExprazor();
 app.MapFallbackToFile("index.html");
+
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseStaticFiles();

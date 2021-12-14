@@ -62,6 +62,11 @@ internal static class ExprazorCore
                 context.AddOrSetCallback(nodeId, key, newAct);
                 commands.Add(new SetVoidCallback(nodeId, key));
             }
+            else if (newValue is Action<string> stringAct && Object.ReferenceEquals(newValue, oldValue) == false)
+            {
+                context.AddOrSetCallback(nodeId, key, stringAct);
+                commands.Add(new SetStringCallback(nodeId, key));
+            }
         }
         else
         {

@@ -82,7 +82,7 @@ namespace Exprazor
         /// <summary>
         /// State will be assigned later in `Patch` function.
         /// </summary>
-        protected internal object? State { get; set; } = default!;
+        internal object? State { get; set; } = default!;
         /// <summary>
         /// Non-nullability is ensured by Elm<TComponent> function.
         /// </summary>
@@ -129,10 +129,10 @@ namespace Exprazor
 
         public Component() {}
 
-        protected abstract TState PropsChanged(TProps props);
+        protected abstract TState PropsChanged(TProps props, TState? state);
         protected abstract IExprazorNode Render(TState state);
 
-        protected internal override object PropsChanged(object props) => PropsChanged((TProps)props)!;
+        protected internal override object PropsChanged(object props) => PropsChanged((TProps)props, (TState?)State)!;
 
         protected internal override IExprazorNode Render(object state) => Render((TState)state)!;
 

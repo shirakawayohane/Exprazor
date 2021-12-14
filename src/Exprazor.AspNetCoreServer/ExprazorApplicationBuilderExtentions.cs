@@ -1,6 +1,7 @@
 ﻿using Exprazor;
 using Exprazor.AspNetCoreServer;
 using MessagePack;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -21,6 +22,13 @@ namespace Microsoft.AspNetCore.Builder
 
         public static void UseExprazor(this IApplicationBuilder app)
         {
+            app.UseRewriter(new RewriteOptions()
+#if DEBUG
+                .AddRedirect("_framework/exprazor.server.js", "_content/Exprazor.AspNetCoreServer/exprazor.server.dev.js")
+#else
+                .AddRedirect("_framework/exprazor.server.js", "_content/Exprazor.AspNetCoreServer/exprazor.server.js")
+#endif
+                );
             app.UseWebSockets();
             app.Use(async (context, next) =>
             {
@@ -79,6 +87,10 @@ namespace Microsoft.AspNetCore.Builder
                     else if(clientCommand is InvokeVoid invokeVoid)
                     {
                         app.InvokeVoidCallback(invokeVoid.Id, invokeVoid.Key);
+                    }
+                    else if(clientCommand is InvokeWithString invokeWithString)
+                    {
+                        app.InvokeStringCallback(invokeWithString.Id, invokeWithString.Key, invokeWithString.Argument);
                     }
 
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);

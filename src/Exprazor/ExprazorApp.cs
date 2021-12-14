@@ -85,5 +85,10 @@ namespace Exprazor
         {
             (callbacks[nodeId][key] as Action)!.Invoke();
         }
+
+        public void InvokeStringCallback(Id nodeId, string key, string argument)
+        {
+            (callbacks[nodeId][key] as Action<string>)!.Invoke(argument);
+        }
     }
 }

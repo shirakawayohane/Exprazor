@@ -5,7 +5,7 @@
 
     public class Counter : Component<CounterProps, CounterState>
     {
-        protected override CounterState PropsChanged(CounterProps props) => new CounterState(props.InitialValue);
+        protected override CounterState PropsChanged(CounterProps props, CounterState? state) => new CounterState(props.InitialValue);
 
         protected override IExprazorNode Render(CounterState state)
         {

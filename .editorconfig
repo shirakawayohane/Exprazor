@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CS8974: メソッド グループを非デリゲート型に変換しています
+dotnet_diagnostic.CS8974.severity = none

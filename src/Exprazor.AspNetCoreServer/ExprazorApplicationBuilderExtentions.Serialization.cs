@@ -18,7 +18,7 @@ namespace Microsoft.AspNetCore.Builder
         interface FromClientCommand { }
         record struct Connected() : FromClientCommand { } // 0
         record struct InvokeVoid(Id Id, string Key) : FromClientCommand { } // 1
-        record struct InvokeWithString(Id Id, string Key, string arg) : FromClientCommand { } // 2
+        record struct InvokeWithString(Id Id, string Key, string Argument) : FromClientCommand { } // 2
 
         class FromServerCommandFormatter : IMessagePackFormatter<FromServerCommand>
         {
