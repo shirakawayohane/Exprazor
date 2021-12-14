@@ -35,17 +35,6 @@ namespace Microsoft.AspNetCore.Builder
                         writer.WriteArrayHeader(2);
                         writer.WriteUInt8(0);
                         MessagePackSerializer.Serialize(ref writer, hc.Commands.ToArray(), options);
-                        //MessagePackSerializer.Serialize(ref writer, new
-                        //{
-                        //    compact = true,
-                        //    scheema = 0
-                        //});
-                        //var commands = hc.Commands.ToArray();
-                        //writer.WriteArrayHeader(commands.Length);
-                        //foreach(var command in commands)
-                        //{
-                        //    MessagePackSerializer.Serialize(ref writer, command, options);
-                        //}
                         break;
                 }
             }
