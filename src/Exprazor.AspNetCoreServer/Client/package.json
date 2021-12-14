@@ -4,8 +4,8 @@
   "description": "Exprazor js client",
   "main": "index.ts",
   "scripts": {
-    "dev": "esbuild ./src/index.ts --watch --define:__DEV__=true --bundle --outfile=../wwwroot/exprazor.server.js",
-    "build": "NODE_ENV=production || set NODE_ENV=production && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/_framework/exprazor.server.min.js"
+    "dev": "esbuild ./src/index.ts --watch --define:__DEV__=true --outfile=../wwwroot/exprazor.server.js",
+    "build": "(echo HELLO && set NODE_ENV=production || NODE_ENV=production) && esbuild ./src/index.ts --minify --bundle --outfile=../wwwroot/exprazor.server.js"
   },
   "author": "WiZLite <black_rais0n.detre@icloud.com>",
   "license": "MIT",

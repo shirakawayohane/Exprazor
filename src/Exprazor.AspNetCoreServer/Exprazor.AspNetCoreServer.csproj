@@ -26,4 +26,8 @@
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	  <Exec WorkingDirectory="$(ProjectDir)\Client" Command="npm run build" />
+  </Target>
+
 </Project>

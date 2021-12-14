@@ -20,7 +20,6 @@ if(rootNode) {
         console.log("open!");
         socket.send(msgpack.encode([0]));
     });
-
     socket.addEventListener("message", event => {
         event.data.arrayBuffer().then(buffer => {
             const data = msgpack.decode(buffer);
