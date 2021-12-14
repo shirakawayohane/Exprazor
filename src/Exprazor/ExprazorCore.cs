@@ -92,13 +92,12 @@ internal static class ExprazorCore
         }
     }
 
-    // まずは、ルート同士で、タグとアトリビュートを比較して差分を発行する。
-    // 次に、子ノードに対して、再帰的に同じ比較を行うが、
-    // keyが同じ場合は比較、
-    // oldNodeには存在するが、newNodeには存在しないものはまるごと削除
-    // oldNodeには存在するが、newNodeには存在するものはまるごと追加し、子供に対してもPatchする
-
-    // Patchが長すぎるので、LINQを使ってでも短く書き直す
+    // First, compare oldVNode and newVNode themselves and create commands from diff.
+    // Second, do the same recursively with their children, as follows.
+    // 1. If boths keys are same, compare them.
+    // 2. If a key is attached to old child, but not to new child, then remove the old node.
+    // 3. If a key is attached to new child, but not to old child, create new node.
+    // The logic that which child node of newVNode will be compared to which child nodes of oldVNode is a little bit difficult.
     static internal void Patch(ExprazorApp context, Id parentId, Id nodeId, IExprazorNode? oldVNode, IExprazorNode newVNode, in List<DOMCommand> commands)
     {
         newVNode.NodeId = nodeId;
