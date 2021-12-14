@@ -1685,7 +1685,7 @@
   // src/index.ts
   var idToElement = /* @__PURE__ */ new Map();
   var elementToId = /* @__PURE__ */ new Map();
-  var MOUNT_ID = -1;
+  var MOUNT_ID = 0;
   var rootNode = document.querySelector("#root");
   if (rootNode) {
     idToElement.set(MOUNT_ID, rootNode);
@@ -1751,3 +1751,4 @@
     });
   }
 })();
+//# sourceMappingURL=exprazor.server.js.map

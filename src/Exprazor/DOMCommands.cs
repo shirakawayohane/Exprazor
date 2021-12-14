@@ -8,7 +8,7 @@ using MessagePack.Formatters;
 
 namespace Exprazor
 {
-    using Id = System.UInt64;
+    using Id = System.Int32;
     [MessagePackFormatter(typeof(DOMCommandFormatter))]
     public interface DOMCommand {}
 
@@ -33,19 +33,19 @@ namespace Exprazor
             reader.ReadArrayHeader();
             return reader.ReadByte() switch
             {
-                0 => new SetStringAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadString()),
-                1 => new SetNumberAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadDouble()),
-                2 => new SetBooleanAttribute(reader.ReadUInt32(), reader.ReadString(), reader.ReadBoolean()),
-                3 => new RemoveAttribute(reader.ReadUInt32(), reader.ReadString()),
-                4 => new SetTextNodeValue(reader.ReadUInt32(), reader.ReadString()),
-                10 => new CreateTextNode(reader.ReadUInt32(), reader.ReadString()),
-                11 => new CreateElement(reader.ReadUInt32(), reader.ReadString()),
-                20 => new AppendChild(reader.ReadUInt32(), reader.ReadUInt32()),
-                21 => new InsertBefore(reader.ReadUInt32(), reader.ReadUInt32(), reader.ReadUInt32()),
-                22 => new RemoveChild(reader.ReadUInt32(), reader.ReadUInt32()),
-                30 => new RemoveCallback(reader.ReadUInt32(), reader.ReadString()),
-                31 => new SetVoidCallback(reader.ReadUInt32(), reader.ReadString()),
-                32 => new SetStringCallback(reader.ReadUInt32(), reader.ReadString()),
+                0 => new SetStringAttribute(reader.ReadInt32(), reader.ReadString(), reader.ReadString()),
+                1 => new SetNumberAttribute(reader.ReadInt32(), reader.ReadString(), reader.ReadDouble()),
+                2 => new SetBooleanAttribute(reader.ReadInt32(), reader.ReadString(), reader.ReadBoolean()),
+                3 => new RemoveAttribute(reader.ReadInt32(), reader.ReadString()),
+                4 => new SetTextNodeValue(reader.ReadInt32(), reader.ReadString()),
+                10 => new CreateTextNode(reader.ReadInt32(), reader.ReadString()),
+                11 => new CreateElement(reader.ReadInt32(), reader.ReadString()),
+                20 => new AppendChild(reader.ReadInt32(), reader.ReadInt32()),
+                21 => new InsertBefore(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32()),
+                22 => new RemoveChild(reader.ReadInt32(), reader.ReadInt32()),
+                30 => new RemoveCallback(reader.ReadInt32(), reader.ReadString()),
+                31 => new SetVoidCallback(reader.ReadInt32(), reader.ReadString()),
+                32 => new SetStringCallback(reader.ReadInt32(), reader.ReadString()),
                 _ => throw new InvalidDataException(),
             };
         }

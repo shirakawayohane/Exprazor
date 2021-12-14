@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 namespace Exprazor
 {
     using Attributes = Dictionary<string, object>;
-    using Id = System.UInt64;
+    using Id = System.Int32;
     public class ExprazorApp
     {
-        public const Id MOUNT_ID = 0;
+        public const Id MOUNT_ID = -1;
         Id _id = MOUNT_ID;
-        internal Id NextId() => ++_id;
+        internal Id NextId() => _id++;
 
         internal List<DOMCommand> commands { get; } = new(256);
         public event Func<List<DOMCommand>,Task>? CommandHandler;

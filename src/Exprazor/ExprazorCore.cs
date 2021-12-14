@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Exprazor;
 using Attributes = Dictionary<string, object>;
-using Id = System.UInt64;
+using Id = System.Int32;
 
 internal static class ExprazorCore
 {
@@ -100,16 +100,20 @@ internal static class ExprazorCore
 
         if (oldVNode == newVNode) return;
 
-        if (oldVNode == null || oldVNode.GetType() != newVNode.GetType())
+        if(oldVNode == null)
+        {
+            var createdId = CreateNode(context, newVNode, commands);
+            commands.Add(new AppendChild(parentId, createdId));
+
+            return;
+        }
+        
+        if(oldVNode.GetType() != newVNode.GetType())
         {
             var createdId = CreateNode(context, newVNode, commands);
             commands.Add(new InsertBefore(parentId, createdId, nodeId));
-
-            if (oldVNode != null)
-            {
-                commands.Add(new RemoveChild(parentId, nodeId));
-                oldVNode.Dispose();
-            }
+            commands.Add(new RemoveChild(parentId, nodeId));
+            oldVNode.Dispose();
 
             return;
         }

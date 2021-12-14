@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Exprazor
 {
     using Attributes = Dictionary<string, object>;
-    using Id = System.UInt64;
+    using Id = System.Int32;
     using static ExprazorCore;
 
     public interface IExprazorNode : IDisposable
@@ -107,7 +107,7 @@ namespace Exprazor
         internal async void SetState(object newState)
         {
             var newTree = Render(newState);
-            Patch(Context, NodeId, ParentId, lastTree, newTree, Context.commands);
+            Patch(Context, ParentId, NodeId, lastTree, newTree, Context.commands);
             lastTree = newTree;
             await Context.DispatchAsync();
         }

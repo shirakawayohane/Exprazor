@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.AspNetCore.Builder
 {
-    using Id = System.UInt64;
+    using Id = System.Int32;
 
     public static partial class ExprazorBuilderExtentions
     {
@@ -49,8 +49,8 @@ namespace Microsoft.AspNetCore.Builder
                 return type switch
                 {
                     0 => new Connected(),
-                    1 => new InvokeVoid(reader.ReadUInt32(), reader.ReadString()),
-                    2 => new InvokeWithString(reader.ReadUInt32(), reader.ReadString(), reader.ReadString()),
+                    1 => new InvokeVoid(reader.ReadInt32(), reader.ReadString()),
+                    2 => new InvokeWithString(reader.ReadInt32(), reader.ReadString(), reader.ReadString()),
                     _ => throw new InvalidDataException()
                 };
             }
