@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -122,8 +122,8 @@ namespace Exprazor
             }
         }
     }
-    public record struct Unit();
-    public abstract class Component<TProps, TState> : Component
+    public record Unit();
+    public abstract class Component<TProps, TState> : Component where TState : class
     {
         protected static Unit Unit = new();
 
@@ -132,7 +132,16 @@ namespace Exprazor
         protected abstract TState PropsChanged(TProps props, TState? state);
         protected abstract IExprazorNode Render(TState state);
 
-        protected internal override object PropsChanged(object props) => PropsChanged((TProps)props, (TState?)State)!;
+        protected internal override object PropsChanged(object props)
+        {
+            if(State != null)
+            {
+                return PropsChanged((TProps)props, (TState)State)!;
+            } else
+            {
+                return PropsChanged((TProps)props, null);
+            }
+        }
 
         protected internal override IExprazorNode Render(object state) => Render((TState)state)!;
 
