@@ -11,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddSimpleConsole();
 builder.Services.AddExprazor();
 
+// For DI check.
+builder.Services.AddTransient<IGetMessageService, GetMessageService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -33,7 +36,12 @@ app.MapExprazor(router =>
         return ExprazorApp.Create<Input>(new Unit());
     });
 
-    router.Route(".*", _ => ExprazorApp.Create<NotFound>(new Unit()));
+    router.Route("/dicheck/?", _ =>
+    {
+        return ExprazorApp.Create<DICheck>(new Unit());
+    });
+
+    router.Route(".*", _ => ExprazorApp.Create<NotFound>(Unit.Instance));
 });
 app.UseExprazor();
 app.MapFallbackToFile("index.html");

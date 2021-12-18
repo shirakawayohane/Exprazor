@@ -23,7 +23,18 @@ namespace Exprazor
         Component rootComponent = default!;
         Dictionary<Id, Dictionary<string, object>> callbacks = new();
 
-        private ExprazorApp() {}
+
+        private ExprazorApp() {
+        }
+
+        public delegate object DIResolver(Type t);
+        static DIResolver dIResolver = default!;
+        public static void SetDIResolver(DIResolver resolver)
+        {
+            dIResolver = resolver;
+        }
+
+        public T Require<T>() => (T)dIResolver(typeof(T));
 
         public static ExprazorApp Create<TComponent>(object props) where TComponent : Component, new()
         {

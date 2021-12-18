@@ -22,6 +22,7 @@ namespace Microsoft.AspNetCore.Builder
 
         public static void UseExprazor(this IApplicationBuilder app)
         {
+            // Switch dev/prod of js client.
             app.UseRewriter(new RewriteOptions()
 #if DEBUG
                 .AddRedirect("_framework/exprazor.server.js", "_content/Exprazor.AspNetCoreServer/exprazor.server.dev.js")
@@ -29,6 +30,9 @@ namespace Microsoft.AspNetCore.Builder
                 .AddRedirect("_framework/exprazor.server.js", "_content/Exprazor.AspNetCoreServer/exprazor.server.js")
 #endif
                 );
+
+            ExprazorApp.SetDIResolver(t => app.ApplicationServices.GetService(t)!);
+
             app.UseWebSockets();
             app.Use(async (context, next) =>
             {
@@ -40,6 +44,7 @@ namespace Microsoft.AspNetCore.Builder
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     var exprazorApp = app.ApplicationServices.GetRequiredService<ExprazorRouter>().Get(context.Request.Path.Value);
+
                     if (exprazorApp != null)
                     {
                         using (var webSocket = await context.WebSockets.AcceptWebSocketAsync())

@@ -114,6 +114,8 @@ namespace Exprazor
 
         protected internal abstract IExprazorNode Render(object state);
 
+        protected T Require<T>() => Context.Require<T>();
+
         public void Dispose()
         {
             if(lastTree != null)
@@ -122,12 +124,16 @@ namespace Exprazor
             }
         }
     }
-    public record Unit();
+    public record Unit()
+    {
+        static Unit _instance = new Unit();
+        public static Unit Instance => _instance;
+    }
     public abstract class Component<TProps, TState> : Component where TState : class
     {
-        protected static Unit Unit = new();
+        public static Unit Unit => Unit.Instance;
 
-        public Component() {}
+        public Component() { }
 
         protected abstract TState PropsChanged(TProps props, TState? state);
         protected abstract IExprazorNode Render(TState state);
