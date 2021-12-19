@@ -1,5 +1,10 @@
  # Exprazor
 
+ ## 発表用
+
+ https://gist.github.com/WiZLite/75564fdf9e72e4bf82c11d4019b458b7
+
+
 Exprazorはユーザーインターフェースを構築するためのC#ライブラリです。
 
 同様のライブラリとしては、React(JS), Vue(JS), Yew(Rust), Blazor(C#)などがありますが、中でもBlazorは直接の競合に当たるかもしれませんが。Exprazorでは以下のコンセプトを主眼において開発しています。
