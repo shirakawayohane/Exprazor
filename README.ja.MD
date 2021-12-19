@@ -75,7 +75,7 @@ namespace Examples
 ### ルーティング
 
 Exprazorのルーティングは、Httpリクエストを経由する方式となっています。
-ルーティングのマッチは正規表現で行いまう。
+ルーティングのマッチは正規表現で行います。
 
 ```cs
 // Program.cs
@@ -108,6 +108,11 @@ app.MapExprazor(router =>
 ```cs
 app.UseExprazor();
 ```
+
+localhostで起動し、 `/counter/123`  等のパスで開いてみましょう。
+以下のようなページが表示されるはずです。
+https://discord.com/channels/857257615746400296/857257615746400301/920596766221557820
+
 
 ## Concepts
 
