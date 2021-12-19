@@ -12,6 +12,103 @@ Exprazorはユーザーインターフェースを構築するためのC#ライ�
 
 まだ影響範囲の狭い個人開発なので、野心的な機能、OpinionatedなAPIを取り入れようという考えが根底にあり、それは他のコンセプトにも反映されています。
 
+## Installation
+まだパッケージとして公開していないので、試してみたい方は、
+Visual Studio 2022　などの .NET6 動作環境で、リポジトリをクローンし、[Examples](https://github.com/WiZLite/Exprazor/tree/master/src/Exprazor.AspNetCore.Sandbox/Examples)をベースに試してみてください。
+
+## Getting Started (Web)
+
+Exprazorは、Webアプリケーションの基盤として、AspNetCoreを用い、その上で動作します。
+
+まずは、空のAspNet.Coreのプロジェクトを作ります。
+
+エントリポイントのファイルに、Exprazorに必要な依存関係を登録します。
+```cs
+// Program.cs
+builder.Services.AddExprazor();
+```
+
+### 初めてのコンポーネント
+次に初めてのコンポーネントを作ってみましょう。
+コンポーネントは、適当に切り分けられたビューと機能の一単位です。
+Exprazorでは、コンポーネントをクラスとして定義します。
+```cs
+// Counter.cs
+namespace Examples
+{
+    // Exprazorのコンポーネントは、プロパティとステートの型引数をとるComponent<TProps,TState>を継承してつくります。
+    public record CounterProps(int InitialValue);
+    public record CounterState(int Value);
+
+    public class Counter : Component<CounterProps, CounterState>
+    {
+        // 必須な関数は、`PropsChanged`と`Render`の２つです。
+        // IntelliSenseが効く環境であれば、すぐに生成できるでしょう。
+
+        // PropsChangedは、プロパティが初めて渡された時と、変更が検知された時によばれます。
+        // プロパティに応じて、ステートを初期化する責務をもち、この中で任意の副作用を起こすことも出来ます。
+        protected override CounterState PropsChanged(CounterProps props, CounterState? state) => new CounterState(props.InitialValue);
+
+        // 木構造で出力するDOMを定義します。
+        // 使う関数は `Elm`, `Text`の２種類です。
+        protected override IExprazorNode Render(CounterState state)
+        {
+            return
+            // Elmは第一引数にタグ名
+            // 第二引数に Attributre を辞書型としてとります
+            // 第三引数以降に子要素をとります。
+            Elm("div", new() { ["id"] = "counter" },
+                Elm("div", null,
+                    Text("Counter")
+                ),
+                Text(state.Value.ToString()),
+                // AttributeのValueに、関数を入れることにより、内部的に関数としてKeyと名前が一致するコールバックに登録されます
+                Elm("button", new() { ["onclick"] = () => SetState(state with { Value = state.Value + 1 }) },
+                    Text("+")
+                )
+            );
+        }
+    }
+}
+```
+
+### ルーティング
+
+Exprazorのルーティングは、Httpリクエストを経由する方式となっています。
+ルーティングのマッチは正規表現で行いまう。
+
+```cs
+// Program.cs
+app.MapExprazor(router =>
+{
+    router.Route("/counter/?(\\d+)?", _ => ExprazorApp.Create<Counter>(new CounterProps(0)));
+});
+```
+
+URLの一部をパラメーターとして用いたい場合は以下のように、
+正規表現で得られたグループの文字列の配列を使うことが出来ます。
+
+```cs
+// Program.cs
+app.MapExprazor(router =>
+{
+    router.Route("/counter/?(\\d+)?", matches /* : string[] */ =>
+    {
+        if(matches == null || matches.Length == 0) return ExprazorApp.Create<Counter>(new CounterProps(0));
+        return ExprazorApp.Create<Counter>(new CounterProps(int.Parse(matches![0])));
+    });
+
+    // このようにフォールバックを定義しておくと良いでしょう。
+    router.Route(".*", _ => ExprazorApp.Create<NotFound>(Unit.Instance));
+});
+```
+
+### ミドルウェアの追加
+最後に、忘れずにミドルウェアを追加しておきましょう。
+```cs
+app.UseExprazor();
+```
+
 ## Concepts
 
 ### 1. 式としてDOM構造を扱う
