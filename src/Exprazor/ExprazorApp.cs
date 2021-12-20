@@ -19,12 +19,15 @@ namespace Exprazor
         internal Id NextId() => _id++;
 
         internal List<DOMCommand> commands { get; } = new(256);
-        public event Func<List<DOMCommand>,Task>? CommandHandler;
+        public event Func<List<DOMCommand>, Task>? DOMCommandHandler;
+        public event Func<List<DOMCommand>, Task>? InvokeCommandHandler;
+
         Component rootComponent = default!;
         Dictionary<Id, Dictionary<string, object>> callbacks = new();
 
 
-        private ExprazorApp() {
+        private ExprazorApp()
+        {
         }
 
         public delegate object DIResolver(Type t);
@@ -58,19 +61,20 @@ namespace Exprazor
 
         internal async Task DispatchAsync()
         {
-            if(CommandHandler != null)
+            if (DOMCommandHandler != null)
             {
-                await CommandHandler.Invoke(commands);
+                await DOMCommandHandler.Invoke(commands);
             }
             commands.Clear();
         }
 
         internal void AddOrSetCallback(Id nodeId, string key, object callback)
         {
-            if(callbacks.TryGetValue(nodeId, out var callbacksOfNode))
+            if (callbacks.TryGetValue(nodeId, out var callbacksOfNode))
             {
                 callbacksOfNode[key] = callback;
-            } else
+            }
+            else
             {
                 callbacks.Add(nodeId, new Dictionary<string, object>()
                 {
@@ -86,7 +90,7 @@ namespace Exprazor
 
         internal void TryRemoveCallbacksOfNode(Id nodeId)
         {
-            if(callbacks.ContainsKey(nodeId))
+            if (callbacks.ContainsKey(nodeId))
             {
                 callbacks.Remove(nodeId);
             }

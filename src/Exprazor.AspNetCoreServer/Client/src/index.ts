@@ -1,6 +1,8 @@
-import { isHandleCommands } from "./FromServerCommand";
+import { isHandleCommands, isInvokeClientSideVoid } from "./FromServerCommand";
 import { DOMCommand, getKeyedObject, Id, isAppendChild, isCreateElement, isCreateTextNode, isInsertBefore, isRemoveAttribute, isRemoveCallback, isRemoveChild, isSetBooleanAttribute, isSetNumberAttribute, isSetStringAttribute, isSetStringCallback, isSetTextNodeValue, isSetVoidCallback, toString } from "./DOMCommands";
 import * as msgpack from "@msgpack/msgpack";
+
+declare var __TRACE__ : any;
 declare var __DEV__ : any;
 
 const idToElement: Map<Id, Node> = new Map();
@@ -71,6 +73,8 @@ if(rootNode) {
                         idToElement[cmd[1]].removeChild(childToRemove);
                     }
                 });
+            } else if(isInvokeClientSideVoid(data)) {
+                window[data[1]](data.slice(2));
             }
         });
     });

@@ -31,15 +31,11 @@ app.MapExprazor(router =>
         return ExprazorApp.Create<Counter>(new CounterProps(int.Parse(matches![0])));
     });
 
-    router.Route("/input/?", _ =>
-    {
-        return ExprazorApp.Create<Input>(new Unit());
-    });
+    router.Route("/input/?", _ => ExprazorApp.Create<Input>(Unit.Instance));
 
-    router.Route("/dicheck/?", _ =>
-    {
-        return ExprazorApp.Create<DICheck>(new Unit());
-    });
+    router.Route("/dicheck/?", _ => ExprazorApp.Create<DICheck>(Unit.Instance));
+
+    router.Route("/tsinteropcheck/?", _ => ExprazorApp.Create<TSInteropCheck>(Unit.Instance));
 
     router.Route(".*", _ => ExprazorApp.Create<NotFound>(Unit.Instance));
 });

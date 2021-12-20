@@ -70,7 +70,7 @@ namespace Exprazor
 
         public object? GetKey() => (Attributes?.TryGetValue("key", out var key) ?? false) ? key : null;
     }
-
+    
     public abstract class Component : IExprazorNode
     {
         // Non-nullability is ensured by Elm function.
@@ -87,11 +87,10 @@ namespace Exprazor
         /// Non-nullability is ensured by Elm<TComponent> function.
         /// </summary>
         protected internal object Props { get; set; } = default!;
-        protected internal virtual void Init() { }
         protected internal abstract object /* State */ PropsChanged(object props);
         protected IExprazorNode Elm(string tag, Attributes? attributes, IEnumerable<IExprazorNode>? children) => new HTMLNode(Context, tag, attributes, children);
         
-        protected IExprazorNode Elm(string tag, Attributes? attributes, params IExprazorNode[] children) => new HTMLNode(Context, tag, attributes, children);
+        protected IExprazorNode Elm(string tag, Attributes? attributes = null, params IExprazorNode[]? children) => new HTMLNode(Context, tag, attributes, children);
        
         internal IExprazorNode Elm<TComponent>(object props) where TComponent : Component, new()
         {
@@ -110,11 +109,12 @@ namespace Exprazor
             Patch(Context, ParentId, NodeId, lastTree, newTree, Context.commands);
             lastTree = newTree;
             await Context.DispatchAsync();
+            await AfterRenderAsync();
         }
 
         protected internal abstract IExprazorNode Render(object state);
-
-        protected T Require<T>() => Context.Require<T>();
+        protected virtual ValueTask AfterRenderAsync() => ValueTask.CompletedTask;
+        protected internal T Require<T>() => Context.Require<T>();
 
         public void Dispose()
         {

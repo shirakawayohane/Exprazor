@@ -6,6 +6,7 @@ public static class ExprazorServiceExtentions
 {
     public static void AddExprazor(this IServiceCollection services)
     {
+        services.AddSingleton<IJSInvoker, RemoteJsInvoker>();
         services.AddSingleton<ExprazorRouter>();
     }
 }

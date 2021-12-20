@@ -1,0 +1,1 @@
+﻿type ElmRef = ["_elmRef", number];

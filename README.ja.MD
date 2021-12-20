@@ -121,6 +121,59 @@ https://discord.com/channels/857257615746400296/857257615746400301/9205967662215
 
 ## Concepts
 
+## Getting Started
+### ミドルウェアの登録
+Exprazorに必要な依存関係を登録します。
+
+```cs
+builder.Services.AddExprazor();
+```
+### Creating First Component
+
+ではまず最初のコンポーネントを作ってみましょう！
+
+コンポーネントは、ステートとプロパティ２つの型を持ちます
+```cs
+namespace Examples;
+
+public record CounterProps(int InitialValue);
+public record CounterState(int Value);
+```
+この２つをプロパティ/ステートを型引数として持った
+Component<CounterProps, CounterState>を継承してコンポーネントを作成します。
+```cs
+public class Counter : Component<CounterProps, CounterState>
+{
+```
+コンポーネントに必須な関数は、`PropsChanged`, `Render`のみです。
+これらの関数は、IntelliSenseが効く環境であれば、すぐに補完することが出来るはずです。
+
+`PropsChanged`はプロパティが最初に渡されたときと変更されたときに呼ばれ、ステートの初期化や、プロパティに応じたステートの更新を担います。
+```cs
+    protected override CounterState PropsChanged(CounterProps props, CounterState? state) => new CounterState(props.InitialValue);
+```
+
+Renderで、木構造のViewを定義します。
+
+```cs
+    protected override IExprazorNode Render(CounterState state)
+    {
+        return
+        Elm("div", new() { ["id"] = "counter" },
+            Elm("div", null,
+                Text("Counter")
+            ),
+            Text(state.Value.ToString()),
+            Elm("button", new() { ["onclick"] = () => SetState(state with { Value = state.Value + 1 }) },
+                Text("+")
+            )
+        );
+    }
+}
+```
+
+## コンセプト
+
 ### 1. 式としてDOM構造を扱う
 BlazorやVueでは、「テンプレート」としてDOM構造を表現するのに対して、Exprazorでは、DOM構造を式として扱うことを重視しています。これには以下のメリットがあります。
 

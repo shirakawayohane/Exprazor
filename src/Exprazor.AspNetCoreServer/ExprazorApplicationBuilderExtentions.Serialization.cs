@@ -13,6 +13,7 @@ namespace Microsoft.AspNetCore.Builder
         [MessagePackFormatter(typeof(FromServerCommandFormatter))]
         interface FromServerCommand { }
         record struct HandleCommands(IEnumerable<DOMCommand> Commands) : FromServerCommand; // 0
+        record struct InvokeClientSideVoid(string funcName, object?[]? Arguments) : FromServerCommand; // 1
 
         [MessagePackFormatter(typeof(FromClientCommandFormatter))]
         interface FromClientCommand { }
@@ -35,6 +36,17 @@ namespace Microsoft.AspNetCore.Builder
                         writer.WriteArrayHeader(2);
                         writer.WriteUInt8(0);
                         MessagePackSerializer.Serialize(ref writer, hc.Commands.ToArray(), options);
+                        break;
+                    case InvokeClientSideVoid iv:
+                        writer.WriteArrayHeader(2);
+                        writer.WriteUInt8(1);
+                        if(iv.Arguments == null)
+                        {
+                            writer.WriteNil();
+                        } else
+                        {
+                            MessagePackSerializer.Serialize(ref writer, iv.Arguments, options);
+                        }
                         break;
                 }
             }

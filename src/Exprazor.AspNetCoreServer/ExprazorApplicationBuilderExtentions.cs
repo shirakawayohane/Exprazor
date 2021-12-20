@@ -45,11 +45,13 @@ namespace Microsoft.AspNetCore.Builder
                 {
                     var exprazorApp = app.ApplicationServices.GetRequiredService<ExprazorRouter>().Get(context.Request.Path.Value);
 
+                    var jsInvoker = app.ApplicationServices.GetRequiredService<IJSInvoker>();
+
                     if (exprazorApp != null)
                     {
                         using (var webSocket = await context.WebSockets.AcceptWebSocketAsync())
                         {
-                            await HandleConnection(context, webSocket, exprazorApp);
+                            await HandleConnection(context, webSocket, exprazorApp, jsInvoker);
                         }
                     }
                     else
@@ -63,7 +65,7 @@ namespace Microsoft.AspNetCore.Builder
                 }
             });
 
-            async Task HandleConnection(HttpContext context, WebSocket webSocket, ExprazorApp app)
+            async Task HandleConnection(HttpContext context, WebSocket webSocket, ExprazorApp app, IJSInvoker invoker)
             {
                 Func<IEnumerable<DOMCommand>,Task> commandHandler = async (commands) =>
                 {
@@ -72,12 +74,21 @@ namespace Microsoft.AspNetCore.Builder
                         Console.WriteLine(MessagePackSerializer.ConvertToJson(MessagePackSerializer.Serialize<FromServerCommand>(new HandleCommands(commands))));
 #endif
                         await MessagePackSerializer.SerializeAsync<FromServerCommand>(memory, new HandleCommands(commands));
-                        var deserialized = MessagePackSerializer.Deserialize<object>(memory.ToArray());
                         await webSocket.SendAsync(memory.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
                     }
                 };
 
-                app.CommandHandler += commandHandler;
+                app.DOMCommandHandler += commandHandler;
+
+                invoker.OnInvokeVoid += async (command) =>
+                {
+                    using (var memory = new MemoryStream())
+                    {
+                        var buffer = MessagePackSerializer.Serialize<FromServerCommand>(new InvokeClientSideVoid(command.FunctionName, command.Args));
+                        await webSocket.SendAsync(buffer, WebSocketMessageType.Binary, true, CancellationToken.None);
+                    }
+                };
+
                 var buffer = new byte[4096];
                 WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 while (!result.CloseStatus.HasValue)
@@ -100,7 +111,7 @@ namespace Microsoft.AspNetCore.Builder
 
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
-                app.CommandHandler -= commandHandler;
+                app.DOMCommandHandler -= commandHandler;
                 await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
             }
         }
