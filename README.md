@@ -10,7 +10,7 @@ Though there is an [blazor](https://github.com/dotnet/aspnetcore/tree/main/src/C
 
 ## Caution
 Exprazor is now experimental project.
-Not a little breaking change may be occur in future.
+Not a little breaking change may occur in future.
 
 ## Installation
 Since exprazor is yet to be published as packages, Please clone this repository and firstly try based on the [Examples](https://github.com/WiZLite/Exprazor/tree/master/src/Exprazor.AspNetCore.Sandbox/Examples).
