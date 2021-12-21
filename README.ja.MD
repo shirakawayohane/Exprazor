@@ -1,25 +1,17 @@
  # Exprazor
-
- ## 発表用
-
- https://gist.github.com/WiZLite/75564fdf9e72e4bf82c11d4019b458b7
-
-
 Exprazorはユーザーインターフェースを構築するためのC#ライブラリです。
 
 同様のライブラリとしては、React(JS), Vue(JS), Yew(Rust), Blazor(C#)などがありますが、中でもBlazorは直接の競合に当たるかもしれませんが。Exprazorでは以下のコンセプトを主眼において開発しています。
-
 
 1. 式としてDOM構造を扱う
 2. WebにおけるシームレスなTypescriptとの相互運用
 3. 様々なプラットフォームで動く設計を重視する
 
-
 まだ影響範囲の狭い個人開発なので、野心的な機能、OpinionatedなAPIを取り入れようという考えが根底にあり、それは他のコンセプトにも反映されています。
 
 ## Installation
 まだパッケージとして公開していないので、試してみたい方は、
-Visual Studio 2022　などの .NET6 動作環境で、リポジトリをクローンし、[Examples](https://github.com/WiZLite/Exprazor/tree/master/src/Exprazor.AspNetCore.Sandbox/Examples)をベースに試してみてください。
+Visual Studio 2022 などの .NET6 動作環境で、リポジトリをクローンし、[Examples](https://github.com/WiZLite/Exprazor/tree/master/src/Exprazor.AspNetCore.Sandbox/Examples)をベースに試してみてください。
 
 ## Getting Started (Web)
 
