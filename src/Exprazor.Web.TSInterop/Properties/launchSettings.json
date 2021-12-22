@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TsInteropGenerator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\sandbox\\Exprazor.TSInterop.ConsoleSandbox\\Exprazor.TSInterop.ConsoleSandbox.csproj"
+    }
+  }
+}

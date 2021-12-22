@@ -16,7 +16,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\Exprazor.TSParser\Exprazor.TSParser.csproj" />
+	  <ProjectReference Include="..\Exprazor.TSParser\Exprazor.TSParser.csproj" />
 	</ItemGroup>
 
 </Project>

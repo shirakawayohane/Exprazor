@@ -18,12 +18,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--<ProjectReference Include="..\Exprazor.AspNetCoreServer.TSInterop\Exprazor.AspNetCoreServer.TSInterop.csproj"
-					  OutputItemType="Analyzer" 
-					  ReferenceOutputAssembly="false" />-->
-		<ProjectReference Include="..\Exprazor.AspNetCoreServer.TSInterop\Exprazor.AspNetCoreServer.TSInterop.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<ProjectReference Include="..\Exprazor.AspNetCoreServer\Exprazor.AspNetCoreServer.csproj" />
-		<ProjectReference Include="..\Exprazor\Exprazor.csproj" />
+		<ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\src\Exprazor.AspNetCoreServer\Exprazor.AspNetCoreServer.csproj" />
+		<ProjectReference Include="..\..\src\Exprazor\Exprazor.csproj" />
 	</ItemGroup>
 
 </Project>
