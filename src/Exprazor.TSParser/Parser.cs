@@ -1,6 +1,8 @@
 ﻿
+using Exprazor.TSParser.AST;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Exprazor.TSParser
 {
@@ -10,20 +12,20 @@ namespace Exprazor.TSParser
 		{
 			public ParseException(string message) : base(message) { }
 		}
-		public static AST Parse(string source)
+		public static SourceTree Parse(string source)
 		{
 			var tokens = Lexer.Tokenize(source);
 			return ParseSourceFile(tokens);
 		}
 
-		static SourceFile ParseSourceFile(Queue<Token> tokens)
+		static SourceTree ParseSourceFile(Queue<Token> tokens)
 		{
 			List<TopLevel> topLevels = new List<TopLevel>();
 			while (tokens.Count > 0)
 			{
 				topLevels.Add(ParseTopLevel(tokens));
 			}
-			return new SourceFile(topLevels);
+			return new SourceTree(topLevels);
 		}
 
 		static TopLevel ParseTopLevel(Queue<Token> tokens)
@@ -114,11 +116,23 @@ namespace Exprazor.TSParser
 				if (_token is RParen)
 				{
 					tokens.Dequeue();
-					if (tokens.Peek() is LBracket)
+
+					TypeSyntax type = VoidType.Instance;
+					if(tokens.Peek() is Colon)
+                    {
+						tokens.Dequeue();
+						type = ParseTypeSyntax(tokens, false);
+                    }
+					if (tokens.Peek() is LBrace)
 					{
-						return new FunctionDecl(ident, parameters, ParseBlock(tokens));
+						var block = ParseBlock(tokens);
+						if(type is VoidType && block.HasReturnValue)
+                        {
+							type = UnspecifiedType.Instance;
+                        }
+						return new FunctionDecl(ident, parameters, type, block);
 					}
-					throw new ParseException("Function decl must be proceeded with block.");
+					throw new ParseException("Function decl must be proceeded with type or block.");
 				}
 				parameters.Add(ParseParameter(tokens));
 				if (tokens.Peek() is Comma)
@@ -133,11 +147,16 @@ namespace Exprazor.TSParser
 		{
 			var token = tokens.Dequeue();
 			if (token is Identifier ident == false) throw new ParseException("A parameter name is required.");
-
+			bool optional = false;
+			if(tokens.Peek() is Question)
+            {
+				tokens.Dequeue();
+				optional = true;
+            }
 			var next = tokens.Dequeue();
 			if (next is Colon)
 			{
-				return new Parameter(ident, ParseTypeSyntax(tokens));
+				return new Parameter(ident, ParseTypeSyntax(tokens, optional));
 			}
 			else
 			{
@@ -145,25 +164,56 @@ namespace Exprazor.TSParser
 			}
 		}
 
-		public static TypeSyntax ParseTypeSyntax(Queue<Token> tokens)
+		static IEnumerable<TypeSyntax> FlattenUnion(TypeSyntax t)
 		{
-			var token = tokens.Dequeue();
-			if (token is Identifier ident == false) throw new ParseException("Type other than number or string or HTMLElement or their array type is not supported for now.");
-			TypeSyntax type = ident.Name switch
+			if (t is not UnionType uni)
 			{
-				"number" => NumberType.Instance,
-				"string" => StringType.Instance,
-				"HTMLElement" => HTMLElement.Instance,
-				_ => throw new ParseException("Type other than number or string or HTMLElement or their array type is not supported for now.")
+				yield return t;
+			}
+			else
+			{
+				foreach (var c in uni.Types)
+					foreach (var cc in FlattenUnion(c))
+						yield return cc;
+			}
+		}
+		public static TypeSyntax ParseTypeSyntax(Queue<Token> tokens, bool optional)
+		{
+			TypeSyntax type = tokens.Dequeue() switch
+			{
+				NumberKeyword => NumberType.Instance,
+				StringKeyword => StringType.Instance,
+				AnyKeyword => AnyType.Instance,
+				LiteralToken literal => literal switch
+				{
+					UndefinedLiteral uk => new LiteralType(uk),
+					NullLiteral nk => new LiteralType(nk),
+					StringLiteral stl => new LiteralType(stl),
+					NumberLiteral nl => new LiteralType(nl),
+					_ => throw new NotSupportedException("Literal type except null and undefined is currently not supported.")
+				},
+				Identifier ident => new TypeReference(new Identifier(ident.Name)),
+				_ => throw new ParseException("Type syntax is invalid")
 			};
-			if (tokens.Peek() is LSQBracket)
+			if (tokens.Peek() is LBracket)
 			{
 				tokens.Dequeue();
-				if (tokens.Dequeue() is RSQBracket)
+				if (tokens.Dequeue() is RBracket)
 				{
-					return new ArrayType(type);
+					type = new ArrayType(type);
 				}
 				throw new ParseException("Array type is invalid");
+			}
+			if(tokens.Peek() is Pipe)
+            {
+				if(optional)
+                {
+					type = new UnionType(new[] { type, new LiteralType(UndefinedLiteral.Instance), ParseTypeSyntax(tokens, false)});
+                } else
+				{
+					type = new UnionType(new[] { type, ParseTypeSyntax(tokens, false) });
+				}
+				return new UnionType(FlattenUnion(type).ToArray());
 			}
 
 			return type;
@@ -171,14 +221,25 @@ namespace Exprazor.TSParser
 
 		public static Block ParseBlock(Queue<Token> tokens)
 		{
+			if (tokens.Peek() is not LBrace) throw new ParseException("Start of block '{' exptected.");
 			tokens.Dequeue();
+			bool hasReturnValue = false;
 			while (true)
 			{
 				if (tokens.Count == 0) throw new ParseException("A block must be closed with '}'");
-				if (tokens.Dequeue() is RBracket)
+				var token = tokens.Dequeue();
+				if (token is RBrace)
 				{
-					return new Block();
+					return new Block(hasReturnValue);
 				}
+				if(token is ReturnKeyword)
+                {
+					if(tokens.Peek() is not SemiColon and not RBrace)
+                    {
+						hasReturnValue = true;
+                    }
+					continue;
+                }
 			}
 		}
 	}

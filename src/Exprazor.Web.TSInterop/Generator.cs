@@ -28,44 +28,35 @@ namespace Exprazor.AspNetCoreServer.TSInterop
                         var syntax = (ctx.Node as ClassDeclarationSyntax)!;
                         var symbol = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetDeclaredSymbol(ctx.SemanticModel, syntax, token);
 
-                        if (symbol == null) return null;
+                        if (symbol == null) return default;
 
                         if (symbol.GetAttributes().Any(x => "Exprazor.Web.TSInterop.TSInteropAttribute" == $"{x.AttributeClass!.ContainingNamespace}.{x.AttributeClass!.Name}"))
                         {
-                            //var filePath = ctx.Node.SyntaxTree.FilePath;
-                            //var tsFilePath = Path.ChangeExtension("cs", "ts");
-                            return symbol;
+                            var filePath = ctx.Node.SyntaxTree.FilePath;
+                            var tsFilePath = Path.ChangeExtension(filePath, "ts");
+                            if (File.Exists(tsFilePath))
+                                return (symbol, tsFilePath);
                         }
 
-                        return null;
+                        return default;
                     }
                 )
-                .Where(static x => x is not null);
+                .Where(static x => x is not (null, _) and not (_, null));
 
 
-            initContext.RegisterSourceOutput(classSymbols, (context, symbol) =>
+            initContext.RegisterSourceOutput(classSymbols, (context, tuple) =>
             {
-                //var (symbol, tsFilePath) = tuple;
-                //context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
-                //    id: "HOGE001",
-                //    title: "アナライザー動いてますよ",
-                //    messageFormat: "Analyzer is working!",
-                //    category: "HOGEHOGE",
-                //    DiagnosticSeverity.Info,
-                //    true
-                //    ), Location.None));
+                var (symbol, tsFilePath) = tuple;
+                if (!File.Exists(tsFilePath)) return;
 
-                //var source = File.ReadAllText(tsFilePath);
-                //var sourceAST = TSParser.Parser.Parse(source);
+                var tsSource = File.ReadAllText(tsFilePath);
+                var sourceAST = TSParser.Parser.Parse(tsSource);
 
-                //{ (File.Exists(tsFilePath) ? "private static void FileFound() {}" : "private static void FileNotFound() {}")}
                 // とりあえず適当なメソッドを生やす。
-
                 string source = $@"namespace {symbol!.ContainingNamespace}
 {{
     {symbol!.GetAccesibilityString()} partial class {symbol.Name} {{
-        private static void DoSomethingNew() {{
-        }}
+{Utils.GenerateTSBindingsFromAST(sourceAST, 1)}
     }}
 }}
 ";

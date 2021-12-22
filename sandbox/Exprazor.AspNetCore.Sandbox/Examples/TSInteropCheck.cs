@@ -1,9 +1,9 @@
 ﻿using Exprazor.AspNetCoreServer;
-using Exprazor.AspNetCoreServer.TSInterop;
+//using Exprazor.Web.TSInterop;
 
 namespace Exprazor.AspNetCore.Sandbox.Examples
 {
-    [TSInterop]
+    //[TSInterop]
     public partial class TSInteropCheck : Component<Unit, Unit>
     {
         IJSInvoker jsInvoker { get; }
@@ -20,6 +20,7 @@ namespace Exprazor.AspNetCore.Sandbox.Examples
         }
         protected override ValueTask AfterRenderAsync()
         {
+            //TSTSInteropCheck();
             jsInvoker.InvokeVoid("greet");
 
             return ValueTask.CompletedTask;

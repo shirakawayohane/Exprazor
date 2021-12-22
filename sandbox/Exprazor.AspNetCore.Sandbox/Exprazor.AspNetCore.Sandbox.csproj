@@ -18,8 +18,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\..\src\Exprazor.AspNetCoreServer\Exprazor.AspNetCoreServer.csproj" />
+		<ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.TSInterop.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\..\src\Exprazor\Exprazor.csproj" />
 	</ItemGroup>
 
