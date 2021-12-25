@@ -8,9 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<!--<ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.TSInterop.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
+    <!--<ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.TSInterop.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
     <ProjectReference Include="..\..\src\Exprazor.Web.TSInterop\Exprazor.Web.TSInterop.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\Exprazor\Exprazor.csproj" />
+	<!--<AdditionalFile Include=".\TSInteropCheck.ts" />-->
   </ItemGroup>
+
+	<PropertyGroup>
+		<AdditionalFileItemNames>$(AdditionalFileItemNames);None</AdditionalFileItemNames>
+	</PropertyGroup>
 
 </Project>

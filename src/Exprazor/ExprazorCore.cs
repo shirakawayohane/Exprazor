@@ -68,6 +68,10 @@ internal static class ExprazorCore
                 commands.Add(new SetStringCallback(nodeId, key));
             }
         }
+        else if(key == "@ref" && newValue is ElementReference elmRef)
+        {
+            elmRef._id = nodeId;
+        }
         else
         {
             if (newValue == null)

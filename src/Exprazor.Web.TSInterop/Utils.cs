@@ -73,7 +73,11 @@ namespace Exprazor.AspNetCoreServer.TSInterop
             if (type is NumberType) return "double";
             if (type is StringType) return "string";
             if (type is UnspecifiedType) return "object";
-            if (type is TypeReference typeRef) return typeRef.Identifier.Name;
+            if (type is TypeReference typeRef) return typeRef.Identifier.Name switch
+            {
+                "HTMLElement" => "global::Exprazor.ElementReference",
+                _ => "object"
+            };
             if (type is VoidType) return "void";
             if(type is ArrayType array)
             {
@@ -104,7 +108,7 @@ namespace Exprazor.AspNetCoreServer.TSInterop
             foreach (var func in ast.Traverse().Where(x => x is ExportStatement export && export.What is FunctionDecl).Select(x => (x as ExportStatement)!.What as FunctionDecl))
             {
                 builder.Append(indent);
-                builder.AppendFormat("protected {0} {1} (", ToCsTypeString(func!.ReturnType), func!.Identifier.Name);
+                builder.AppendFormat("protected {0} {1}(", ToCsTypeString(func!.ReturnType), func!.Identifier.Name);
                 int index = 0;
                 foreach(var parameter in func.Parameters)
                 {
@@ -121,15 +125,72 @@ namespace Exprazor.AspNetCoreServer.TSInterop
                 builder.AppendLine();
                 builder.Append(indent);
                 builder.Append('{');
+                builder.AppendLine();
 
                 // Content
-
+                builder.Append(indent);
+                builder.Append('\t');
+                builder.Append("throw new NotImplementedException();");
                 builder.AppendLine();
+
                 builder.Append(indent);
                 builder.Append('}');
+                builder.AppendLine();
             }
 
             return builder.ToString();
         }
+
+        //public static (string? nameSpace, string? accesibility, string? className) ReadCsInterestIdentifiers(string source)
+        //{
+        //    string? nameSpace = null;
+        //    string? accesibility = null;
+        //    string? className = null;
+        //    var words = source.Replace("\r\n", "\n").Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        //    // don't care about last word.
+        //    for(int i = 0; i < words.Length - 1; i++)
+        //    {
+        //        if (words[i] == "namespace")
+        //        {
+        //            var lbraceIndex = words[i + 1].IndexOf('{');
+        //            if(lbraceIndex > 0)
+        //            {
+        //                nameSpace = words[i + 1].Substring(0, lbraceIndex - 1);
+        //                continue;
+        //            }
+        //            nameSpace = words[i + 1];
+        //            continue;
+        //        }
+
+        //        if(words[i] == "class")
+        //        {
+        //            // read class name
+        //            var colonIndex = words[i + 1].IndexOf(':');
+        //            if(colonIndex > 0)
+        //            {
+        //                className = words[words.Length - 1].Substring(0, colonIndex - 1);
+        //                continue;
+        //            }
+        //            var lbraceIndex = words[i + 1].IndexOf('{');
+        //            if (lbraceIndex > 0)
+        //            {
+        //                className = words[i + 1].Substring(0, lbraceIndex - 1);
+        //                continue;
+        //            }
+        //            className = words[i + 1];
+        //            continue;
+
+        //            // read accesibility
+        //            if(i > 0)
+        //            {
+        //                accesibility = words[i - 1] switch
+        //                {
+        //                    "public"
+        //                }
+        //            }
+        //        }
+        //    }
+        //    return (nameSpace, accesibility, className);
+        //}
     }
 }

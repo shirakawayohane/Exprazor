@@ -202,7 +202,10 @@ namespace Exprazor.TSParser
 				{
 					type = new ArrayType(type);
 				}
-				throw new ParseException("Array type is invalid");
+				else
+				{
+					throw new ParseException("Array type is invalid");
+				}
 			}
 			if(tokens.Peek() is Pipe)
             {
